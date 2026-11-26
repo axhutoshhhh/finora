@@ -558,3 +558,75 @@ def get_analytics_balance_history() -> tuple[Response, int]:
 def get_analytics_budgets() -> tuple[Response, int]:
     rep = _analytics_report_from_args()
     return jsonify({"period": rep["period"], "budget_performance": rep["budget_performance"]}), 200
+
+
+@api_bp.get("/analytics/forecast")
+def get_analytics_forecast() -> tuple[Response, int]:
+    from app.services import forecasting_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    month = request.args.get("month")
+    return jsonify(forecasting_service.compute_monthly_forecast(db_path, month=month)), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: Insights & Notifications
+# ---------------------------------------------------------------------------
+
+
+@api_bp.get("/insights")
+@api_bp.get("/notifications")
+def get_insights() -> tuple[Response, int]:
+    from app.services import advisory_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    advisory_service.evaluate_advisories(db_path)
+    items = advisory_service.list_notifications(db_path)
+    unread_count = sum(1 for item in items if not item["is_read"])
+    return jsonify({"notifications": items, "unread_count": unread_count}), 200
+
+
+@api_bp.post("/notifications/<int:notification_id>/read")
+def mark_notification_read(notification_id: int) -> tuple[Response, int]:
+    from app.services import advisory_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(advisory_service.mark_notification_read(db_path, notification_id)), 200
+
+
+@api_bp.post("/notifications/read-all")
+def mark_all_notifications_read() -> tuple[Response, int]:
+    from app.services import advisory_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(advisory_service.mark_all_notifications_read(db_path)), 200
+
+
+@api_bp.post("/notifications/<int:notification_id>/dismiss")
+def dismiss_notification(notification_id: int) -> tuple[Response, int]:
+    from app.services import advisory_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(advisory_service.dismiss_notification(db_path, notification_id)), 200
+
+
+@api_bp.get("/notification-preferences")
+def get_notification_preferences() -> tuple[Response, int]:
+    from app.services import advisory_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"preferences": advisory_service.get_notification_preferences(db_path)}), 200
+
+
+@api_bp.put("/notification-preferences")
+def update_notification_preferences() -> tuple[Response, int]:
+    from app.services import advisory_service
+
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    items = payload.get("preferences")
+    if not isinstance(items, list):
+        raise ValidationError("Preferences list is required.", field="preferences")
+    return jsonify(
+        {"preferences": advisory_service.update_notification_preferences(db_path, items)}
+    ), 200
