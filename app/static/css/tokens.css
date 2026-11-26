@@ -1,0 +1,152 @@
+/* Finora Design Tokens — Light & Dark System (no external fonts, no gradients) */
+
+:root {
+  color-scheme: light dark;
+
+  /* Raw light & dark color pairs */
+  --raw-canvas-light: #F7F7F4;
+  --raw-canvas-dark: #151716;
+  --raw-surface-light: #FFFFFF;
+  --raw-surface-dark: #202321;
+  --raw-sidebar-light: #EDEFEA;
+  --raw-sidebar-dark: #191C1A;
+  --raw-subtle-light: #E4E8E1;
+  --raw-subtle-dark: #282C29;
+
+  --raw-text-primary-light: #202420;
+  --raw-text-primary-dark: #ECEEEA;
+  --raw-text-secondary-light: #565F57;
+  --raw-text-secondary-dark: #9CA59E;
+
+  --raw-accent-light: #28634B;
+  --raw-accent-dark: #83B69A;
+  --raw-accent-hover-light: #204F3B;
+  --raw-accent-hover-dark: #96C5AB;
+  --raw-accent-text-light: #FFFFFF;
+  --raw-accent-text-dark: #101914;
+  --raw-accent-tint-light: #E8F0EC;
+  --raw-accent-tint-dark: #22322A;
+
+  --raw-positive-light: #1F6847;
+  --raw-positive-dark: #74C198;
+  --raw-positive-tint-light: #EAF3EE;
+  --raw-positive-tint-dark: #1F3128;
+
+  --raw-negative-light: #B84B43;
+  --raw-negative-dark: #E38880;
+  --raw-negative-tint-light: #F9ECEB;
+  --raw-negative-tint-dark: #362221;
+
+  --raw-warning-light: #8D5B14;
+  --raw-warning-dark: #DFAA59;
+
+  --raw-border-hairline-light: #D7DDD5;
+  --raw-border-hairline-dark: #2E332F;
+  --raw-border-control-light: #707A71;
+  --raw-border-control-dark: #69736B;
+
+  /* Resolved semantic tokens (fallback for browsers before light-dark() + dynamic @supports) */
+  --bg-canvas: var(--raw-canvas-light);
+  --bg-surface: var(--raw-surface-light);
+  --bg-sidebar: var(--raw-sidebar-light);
+  --bg-subtle: var(--raw-subtle-light);
+
+  --text-primary: var(--raw-text-primary-light);
+  --text-secondary: var(--raw-text-secondary-light);
+
+  --accent-primary: var(--raw-accent-light);
+  --accent-hover: var(--raw-accent-hover-light);
+  --accent-text: var(--raw-accent-text-light);
+  --accent-tint: var(--raw-accent-tint-light);
+
+  --positive: var(--raw-positive-light);
+  --positive-tint: var(--raw-positive-tint-light);
+  --negative: var(--raw-negative-light);
+  --negative-tint: var(--raw-negative-tint-light);
+  --warning: var(--raw-warning-light);
+
+  --border-hairline: var(--raw-border-hairline-light);
+  --border-control: var(--raw-border-control-light);
+  --focus-ring: var(--accent-primary);
+  --backdrop-scrim: rgba(16, 19, 17, 0.42);
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Spacing scale (4px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  /* Radii & elevation */
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --shadow-dialog: 0 18px 44px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  /* Shell dimensions */
+  --sidebar-width: 224px;
+  --toolbar-height: 54px;
+}
+
+:root:has(> head > meta[name="color-scheme"][content="dark"]) {
+  color-scheme: dark;
+}
+
+:root:has(> head > meta[name="color-scheme"][content="light"]) {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-canvas: var(--raw-canvas-dark);
+    --bg-surface: var(--raw-surface-dark);
+    --bg-sidebar: var(--raw-sidebar-dark);
+    --bg-subtle: var(--raw-subtle-dark);
+    --text-primary: var(--raw-text-primary-dark);
+    --text-secondary: var(--raw-text-secondary-dark);
+    --accent-primary: var(--raw-accent-dark);
+    --accent-hover: var(--raw-accent-hover-dark);
+    --accent-text: var(--raw-accent-text-dark);
+    --accent-tint: var(--raw-accent-tint-dark);
+    --positive: var(--raw-positive-dark);
+    --positive-tint: var(--raw-positive-tint-dark);
+    --negative: var(--raw-negative-dark);
+    --negative-tint: var(--raw-negative-tint-dark);
+    --warning: var(--raw-warning-dark);
+    --border-hairline: var(--raw-border-hairline-dark);
+    --border-control: var(--raw-border-control-dark);
+    --backdrop-scrim: rgba(0, 0, 0, 0.62);
+  }
+}
+
+@supports (color: light-dark(white, black)) {
+  :root {
+    --bg-canvas: light-dark(var(--raw-canvas-light), var(--raw-canvas-dark));
+    --bg-surface: light-dark(var(--raw-surface-light), var(--raw-surface-dark));
+    --bg-sidebar: light-dark(var(--raw-sidebar-light), var(--raw-sidebar-dark));
+    --bg-subtle: light-dark(var(--raw-subtle-light), var(--raw-subtle-dark));
+    --text-primary: light-dark(var(--raw-text-primary-light), var(--raw-text-primary-dark));
+    --text-secondary: light-dark(var(--raw-text-secondary-light), var(--raw-text-secondary-dark));
+    --accent-primary: light-dark(var(--raw-accent-light), var(--raw-accent-dark));
+    --accent-hover: light-dark(var(--raw-accent-hover-light), var(--raw-accent-hover-dark));
+    --accent-text: light-dark(var(--raw-accent-text-light), var(--raw-accent-text-dark));
+    --accent-tint: light-dark(var(--raw-accent-tint-light), var(--raw-accent-tint-dark));
+    --positive: light-dark(var(--raw-positive-light), var(--raw-positive-dark));
+    --positive-tint: light-dark(var(--raw-positive-tint-light), var(--raw-positive-tint-dark));
+    --negative: light-dark(var(--raw-negative-light), var(--raw-negative-dark));
+    --negative-tint: light-dark(var(--raw-negative-tint-light), var(--raw-negative-tint-dark));
+    --warning: light-dark(var(--raw-warning-light), var(--raw-warning-dark));
+    --border-hairline: light-dark(var(--raw-border-hairline-light), var(--raw-border-hairline-dark));
+    --border-control: light-dark(var(--raw-border-control-light), var(--raw-border-control-dark));
+    --backdrop-scrim: light-dark(rgba(16, 19, 17, 0.42), rgba(0, 0, 0, 0.64));
+    accent-color: var(--accent-primary);
+  }
+}

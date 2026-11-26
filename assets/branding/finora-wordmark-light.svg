@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 36" width="156" height="36" fill="none">
+  <g transform="translate(2,2)">
+    <path d="M6 5H26L22.5 10.5H12V27H6V5Z" fill="#28634B"/>
+    <path d="M14.5 14.5H24L20.8 19.5H14.5V14.5Z" fill="#28634B"/>
+    <rect x="14.5" y="23.5" width="4.5" height="3.5" fill="#28634B" opacity="0.55"/>
+  </g>
+  <text x="40" y="24.5" fill="#202420" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="20" font-weight="600" letter-spacing="-0.025em">Finora</text>
+</svg>

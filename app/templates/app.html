@@ -1,4 +1,378 @@
 {% extends "base.html" %}
+{% block title %}Overview | Finora{% endblock %}
 {% block body %}
-<main id="finora-shell" data-initial-view="{{ active_view }}">Finora shell loading</main>
+<a href="#page-title" class="skip-link visually-hidden">Skip to main content</a>
+
+<div class="app-shell" id="finora-shell" data-initial-view="{{ active_view }}" data-initial-appearance="{{ appearance }}">
+  <aside class="app-sidebar" aria-label="Workspace">
+    <div class="sidebar-top">
+      <div class="brand-header">
+        <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M6 5H26L22.5 10.5H12V27H6V5Z" fill="currentColor"></path>
+          <path d="M14.5 14.5H24L20.8 19.5H14.5V14.5Z" fill="currentColor" opacity="0.72"></path>
+          <rect x="14.5" y="23.5" width="4.5" height="3.5" fill="currentColor" opacity="0.48"></rect>
+        </svg>
+        <span class="brand-wordmark">Finora</span>
+      </div>
+
+      <nav aria-label="Primary">
+        <ul class="nav-list" role="list">
+          <li>
+            <a href="/" class="nav-link" data-nav-view="overview" {% if active_view == "overview" %}aria-current="page"{% endif %}>
+              <span class="icon" data-icon="layers" aria-hidden="true"></span>
+              <span>Overview</span>
+            </a>
+          </li>
+          <li>
+            <a href="/transactions" class="nav-link" data-nav-view="transactions" {% if active_view == "transactions" %}aria-current="page"{% endif %}>
+              <span class="icon" data-icon="arrow-left-right" aria-hidden="true"></span>
+              <span>Transactions</span>
+            </a>
+          </li>
+          <li>
+            <a href="/settings" class="nav-link" data-nav-view="settings" {% if active_view == "settings" %}aria-current="page"{% endif %}>
+              <span class="icon" data-icon="settings" aria-hidden="true"></span>
+              <span>Settings</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-account">
+        <span class="sidebar-account-label">
+          <span class="icon icon-sm" data-icon="wallet" aria-hidden="true"></span>
+          <span>Cash</span>
+        </span>
+        <span id="sidebar-cash-balance" class="sidebar-account-balance tabular-nums">₹0.00</span>
+      </div>
+      <div class="sidebar-status">Offline local ledger</div>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="page-toolbar">
+      <div class="toolbar-title-group">
+        <h1 id="page-title" class="page-title" tabindex="-1">Overview</h1>
+        <span id="page-subtitle" class="page-subtitle"></span>
+      </div>
+      <div class="toolbar-actions">
+        <button type="button" id="new-tx-btn" class="btn btn-primary">
+          <span class="icon icon-sm" data-icon="plus" aria-hidden="true"></span>
+          <span>New Transaction</span>
+          <span class="kbd-hint" aria-hidden="true">⌘N</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="main-content" class="content-scroll">
+      <div class="content-container">
+        <div id="app-live-status" class="visually-hidden" role="status" aria-live="polite"></div>
+
+        <div id="global-error-banner" class="banner banner-error" role="alert" hidden>
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="global-error-text"></span>
+        </div>
+
+        <div id="global-success-banner" class="banner banner-success" role="status" hidden>
+          <span class="icon icon-sm" data-icon="check-circle-2" aria-hidden="true"></span>
+          <span id="global-success-text"></span>
+        </div>
+
+        <section id="view-overview" class="view-panel" aria-labelledby="page-title" {% if active_view != "overview" %}hidden{% endif %}>
+          <div class="overview-ledger-strip" aria-label="Financial summary">
+            <div class="balance-primary">
+              <span class="metric-label">Current Balance</span>
+              <span id="overview-balance" class="balance-figure tabular-nums">₹0.00</span>
+              <span class="metric-meta">Cash account (INR)</span>
+            </div>
+
+            <div class="metric-block">
+              <span class="metric-label">Monthly Income</span>
+              <span id="overview-income" class="metric-value tabular-nums amount-positive">₹0.00</span>
+              <span id="overview-month-label-inc" class="metric-meta">This month</span>
+            </div>
+
+            <div class="metric-block">
+              <span class="metric-label">Monthly Expenses</span>
+              <span id="overview-expense" class="metric-value tabular-nums amount-negative">₹0.00</span>
+              <span id="overview-month-label-exp" class="metric-meta">This month</span>
+            </div>
+
+            <div class="metric-block">
+              <span class="metric-label">Monthly Surplus</span>
+              <span id="overview-surplus" class="metric-value tabular-nums">₹0.00</span>
+              <span id="overview-surplus-meta" class="metric-meta">Income minus expenses</span>
+            </div>
+          </div>
+
+          <div class="section-header">
+            <h2 class="section-title">Recent Activity</h2>
+            <button type="button" id="overview-view-all-btn" class="btn-link" hidden>View all transactions</button>
+          </div>
+
+          <div id="overview-empty" class="empty-state" hidden>
+            <span class="icon icon-lg empty-state-icon" data-icon="inbox" aria-hidden="true"></span>
+            <h3 class="empty-state-title">No transactions recorded yet</h3>
+            <p class="empty-state-copy">
+              Your Cash ledger starts at ₹0.00. Record an income or expense entry to update your balance and monthly summary.
+            </p>
+            <button type="button" id="overview-empty-add-btn" class="btn btn-secondary">
+              <span class="icon icon-sm" data-icon="plus" aria-hidden="true"></span>
+              <span>Add your first transaction</span>
+            </button>
+          </div>
+
+          <div id="overview-table-wrap" class="table-wrapper" role="region" tabindex="0" aria-labelledby="overview-table-caption" hidden>
+            <table class="ledger-table">
+              <caption id="overview-table-caption" class="visually-hidden">Recent transactions</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Category</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Account</th>
+                  <th scope="col" class="col-amount">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="overview-recent-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-transactions" class="view-panel" aria-labelledby="page-title" {% if active_view != "transactions" %}hidden{% endif %}>
+          <div class="section-header">
+            <h2 class="section-title">Transaction History</h2>
+            <span id="tx-history-count" class="section-meta">0 entries</span>
+          </div>
+
+          <div id="tx-empty" class="empty-state" hidden>
+            <span class="icon icon-lg empty-state-icon" data-icon="inbox" aria-hidden="true"></span>
+            <h3 class="empty-state-title">No transaction history</h3>
+            <p class="empty-state-copy">
+              Recorded income and expense entries appear here in reverse chronological order.
+            </p>
+            <button type="button" id="tx-empty-add-btn" class="btn btn-secondary">
+              <span class="icon icon-sm" data-icon="plus" aria-hidden="true"></span>
+              <span>Record a transaction</span>
+            </button>
+          </div>
+
+          <div id="tx-table-wrap" class="table-wrapper" role="region" tabindex="0" aria-labelledby="tx-table-caption" hidden>
+            <table class="ledger-table">
+              <caption id="tx-table-caption" class="visually-hidden">All recorded transactions</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Category</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Account</th>
+                  <th scope="col" class="col-amount">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="tx-history-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-settings" class="view-panel" aria-labelledby="page-title" {% if active_view != "settings" %}hidden{% endif %}>
+          <div class="settings-stack">
+            <div class="settings-group">
+              <h2 class="settings-group-title">Appearance</h2>
+              <p class="settings-group-desc">Choose how Finora matches or overrides your macOS appearance.</p>
+              <fieldset class="appearance-fieldset">
+                <legend class="visually-hidden">Application appearance</legend>
+
+                <label class="appearance-option">
+                  <input type="radio" class="appearance-radio" name="appearance" value="system">
+                  <span class="appearance-card">
+                    <span class="appearance-name">
+                      <span class="icon icon-sm" data-icon="monitor" aria-hidden="true"></span>
+                      <span>System</span>
+                    </span>
+                    <span id="system-appearance-hint" class="appearance-hint">Follows macOS</span>
+                  </span>
+                </label>
+
+                <label class="appearance-option">
+                  <input type="radio" class="appearance-radio" name="appearance" value="light">
+                  <span class="appearance-card">
+                    <span class="appearance-name">
+                      <span class="icon icon-sm" data-icon="sun" aria-hidden="true"></span>
+                      <span>Light</span>
+                    </span>
+                    <span class="appearance-hint">Warm stone surface</span>
+                  </span>
+                </label>
+
+                <label class="appearance-option">
+                  <input type="radio" class="appearance-radio" name="appearance" value="dark">
+                  <span class="appearance-card">
+                    <span class="appearance-name">
+                      <span class="icon icon-sm" data-icon="moon" aria-hidden="true"></span>
+                      <span>Dark</span>
+                    </span>
+                    <span class="appearance-hint">Low-glare charcoal</span>
+                  </span>
+                </label>
+              </fieldset>
+            </div>
+
+            <div class="settings-group">
+              <h2 class="settings-group-title">Ledger Defaults</h2>
+              <p class="settings-group-desc">Authoritative defaults active in Phase 1.</p>
+              <dl class="info-dl">
+                <dt>Base Currency</dt>
+                <dd id="settings-currency">INR (₹)</dd>
+                <dt>Default Account</dt>
+                <dd>Cash</dd>
+              </dl>
+            </div>
+
+            <div class="settings-group">
+              <h2 class="settings-group-title">Local Storage &amp; Privacy</h2>
+              <p class="settings-group-desc">Finora stores all records strictly on this Mac with zero external network calls or telemetry.</p>
+              <dl class="info-dl">
+                <dt>Data Directory</dt>
+                <dd id="settings-data-dir" class="mono">—</dd>
+                <dt>SQLite Database</dt>
+                <dd id="settings-db-path" class="mono">—</dd>
+                <dt>Data Protection</dt>
+                <dd id="settings-encryption-note">—</dd>
+              </dl>
+            </div>
+
+            <div class="settings-group">
+              <h2 class="settings-group-title">About Finora</h2>
+              <div class="about-brand-row">
+                <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                  <path d="M6 5H26L22.5 10.5H12V27H6V5Z" fill="currentColor"></path>
+                  <path d="M14.5 14.5H24L20.8 19.5H14.5V14.5Z" fill="currentColor" opacity="0.72"></path>
+                  <rect x="14.5" y="23.5" width="4.5" height="3.5" fill="currentColor" opacity="0.48"></rect>
+                </svg>
+                <strong>Finora Desktop</strong>
+                <span class="section-meta">Version <span id="settings-version">{{ app_version }}</span> (Phase 1 Foundation)</span>
+              </div>
+              <p class="settings-group-desc">
+                Offline-first personal finance desktop application built with Python, Flask, SQLite, and macOS WebKit.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<dialog id="tx-dialog" class="tx-dialog" aria-labelledby="tx-dialog-title">
+  <div class="dialog-header">
+    <h1 id="tx-dialog-title" class="dialog-title">New Transaction</h1>
+    <button type="button" id="tx-dialog-close" class="btn-icon" aria-label="Close dialog">
+      <span class="icon" data-icon="x" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <form id="tx-form" novalidate>
+    <div class="dialog-body">
+      <div id="tx-form-error" class="banner banner-error" role="alert" hidden>
+        <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+        <span id="tx-form-error-text"></span>
+      </div>
+
+      <fieldset class="segmented-fieldset">
+        <legend class="visually-hidden">Transaction classification</legend>
+        <label class="segmented-option">
+          <input type="radio" class="segmented-radio" name="entry_type" value="expense" checked>
+          <span class="segmented-label">
+            <span class="icon icon-sm" data-icon="arrow-up-right" aria-hidden="true"></span>
+            <span>Expense</span>
+          </span>
+        </label>
+        <label class="segmented-option">
+          <input type="radio" class="segmented-radio" name="entry_type" value="income">
+          <span class="segmented-label">
+            <span class="icon icon-sm" data-icon="arrow-down-left" aria-hidden="true"></span>
+            <span>Income</span>
+          </span>
+        </label>
+      </fieldset>
+
+      <div class="form-field">
+        <label for="tx-amount" class="form-label">Amount (INR) <span aria-hidden="true">*</span></label>
+        <span id="tx-amount-hint" class="field-hint">Positive amount up to two decimal places (e.g. 250.50)</span>
+        <div id="tx-amount-wrap" class="amount-input-wrap">
+          <span class="amount-prefix" aria-hidden="true">₹</span>
+          <input
+            id="tx-amount"
+            name="amount"
+            type="text"
+            class="form-control tabular-nums"
+            inputmode="decimal"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="0.00"
+            aria-describedby="tx-amount-hint tx-amount-error"
+            required
+            autofocus
+          >
+        </div>
+        <p id="tx-amount-error" class="field-error" hidden>
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="tx-amount-error-text"></span>
+        </p>
+      </div>
+
+      <div class="form-field">
+        <label for="tx-category" class="form-label">Category <span aria-hidden="true">*</span></label>
+        <select id="tx-category" name="category_id" class="form-control" aria-describedby="tx-category-error" required></select>
+        <p id="tx-category-error" class="field-error" hidden>
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="tx-category-error-text"></span>
+        </p>
+      </div>
+
+      <div class="form-row-two">
+        <div class="form-field">
+          <label for="tx-account" class="form-label">Account <span aria-hidden="true">*</span></label>
+          <select id="tx-account" name="account_id" class="form-control" required></select>
+        </div>
+
+        <div class="form-field">
+          <label for="tx-date" class="form-label">Date <span aria-hidden="true">*</span></label>
+          <input id="tx-date" name="tx_date" type="date" class="form-control tabular-nums" aria-describedby="tx-date-error" required>
+          <p id="tx-date-error" class="field-error" hidden>
+            <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+            <span id="tx-date-error-text"></span>
+          </p>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="tx-description" class="form-label">Description (optional)</label>
+        <input
+          id="tx-description"
+          name="description"
+          type="text"
+          class="form-control"
+          maxlength="240"
+          placeholder="e.g. Groceries, Monthly stipend"
+          aria-describedby="tx-description-error"
+        >
+        <p id="tx-description-error" class="field-error" hidden>
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="tx-description-error-text"></span>
+        </p>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <button type="button" id="tx-cancel-btn" class="btn btn-secondary">Cancel</button>
+      <button type="submit" id="tx-submit-btn" class="btn btn-primary">Save Transaction</button>
+    </div>
+  </form>
+</dialog>
 {% endblock %}

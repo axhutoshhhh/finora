@@ -1,0 +1,65 @@
+/* Locally bundled Lucide SVG icon mask mapping (CSP-safe, adaptive light/dark currentColor) */
+
+.icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.icon-sm {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-lg {
+  width: 22px;
+  height: 22px;
+}
+
+[data-icon="layers"] { -webkit-mask-image: url("/static/icons/layers.svg"); mask-image: url("/static/icons/layers.svg"); }
+[data-icon="arrow-left-right"] { -webkit-mask-image: url("/static/icons/arrow-left-right.svg"); mask-image: url("/static/icons/arrow-left-right.svg"); }
+[data-icon="settings"] { -webkit-mask-image: url("/static/icons/settings.svg"); mask-image: url("/static/icons/settings.svg"); }
+[data-icon="plus"] { -webkit-mask-image: url("/static/icons/plus.svg"); mask-image: url("/static/icons/plus.svg"); }
+[data-icon="arrow-up-right"] { -webkit-mask-image: url("/static/icons/arrow-up-right.svg"); mask-image: url("/static/icons/arrow-up-right.svg"); }
+[data-icon="arrow-down-left"] { -webkit-mask-image: url("/static/icons/arrow-down-left.svg"); mask-image: url("/static/icons/arrow-down-left.svg"); }
+[data-icon="alert-circle"] { -webkit-mask-image: url("/static/icons/alert-circle.svg"); mask-image: url("/static/icons/alert-circle.svg"); }
+[data-icon="check-circle-2"] { -webkit-mask-image: url("/static/icons/check-circle-2.svg"); mask-image: url("/static/icons/check-circle-2.svg"); }
+[data-icon="x"] { -webkit-mask-image: url("/static/icons/x.svg"); mask-image: url("/static/icons/x.svg"); }
+[data-icon="calendar"] { -webkit-mask-image: url("/static/icons/calendar.svg"); mask-image: url("/static/icons/calendar.svg"); }
+[data-icon="monitor"] { -webkit-mask-image: url("/static/icons/monitor.svg"); mask-image: url("/static/icons/monitor.svg"); }
+[data-icon="sun"] { -webkit-mask-image: url("/static/icons/sun.svg"); mask-image: url("/static/icons/sun.svg"); }
+[data-icon="moon"] { -webkit-mask-image: url("/static/icons/moon.svg"); mask-image: url("/static/icons/moon.svg"); }
+[data-icon="folder"] { -webkit-mask-image: url("/static/icons/folder.svg"); mask-image: url("/static/icons/folder.svg"); }
+[data-icon="shield-check"] { -webkit-mask-image: url("/static/icons/shield-check.svg"); mask-image: url("/static/icons/shield-check.svg"); }
+[data-icon="info"] { -webkit-mask-image: url("/static/icons/info.svg"); mask-image: url("/static/icons/info.svg"); }
+[data-icon="wallet"] { -webkit-mask-image: url("/static/icons/wallet.svg"); mask-image: url("/static/icons/wallet.svg"); }
+[data-icon="inbox"] { -webkit-mask-image: url("/static/icons/inbox.svg"); mask-image: url("/static/icons/inbox.svg"); }
+
+/* Expense category icons */
+[data-icon="utensils"] { -webkit-mask-image: url("/static/icons/utensils.svg"); mask-image: url("/static/icons/utensils.svg"); }
+[data-icon="house"] { -webkit-mask-image: url("/static/icons/house.svg"); mask-image: url("/static/icons/house.svg"); }
+[data-icon="car"] { -webkit-mask-image: url("/static/icons/car.svg"); mask-image: url("/static/icons/car.svg"); }
+[data-icon="shopping-bag"] { -webkit-mask-image: url("/static/icons/shopping-bag.svg"); mask-image: url("/static/icons/shopping-bag.svg"); }
+[data-icon="book-open"] { -webkit-mask-image: url("/static/icons/book-open.svg"); mask-image: url("/static/icons/book-open.svg"); }
+[data-icon="heart-pulse"] { -webkit-mask-image: url("/static/icons/heart-pulse.svg"); mask-image: url("/static/icons/heart-pulse.svg"); }
+[data-icon="film"] { -webkit-mask-image: url("/static/icons/film.svg"); mask-image: url("/static/icons/film.svg"); }
+[data-icon="repeat"] { -webkit-mask-image: url("/static/icons/repeat.svg"); mask-image: url("/static/icons/repeat.svg"); }
+[data-icon="zap"] { -webkit-mask-image: url("/static/icons/zap.svg"); mask-image: url("/static/icons/zap.svg"); }
+[data-icon="circle-ellipsis"] { -webkit-mask-image: url("/static/icons/circle-ellipsis.svg"); mask-image: url("/static/icons/circle-ellipsis.svg"); }
+
+/* Income category icons */
+[data-icon="briefcase"] { -webkit-mask-image: url("/static/icons/briefcase.svg"); mask-image: url("/static/icons/briefcase.svg"); }
+[data-icon="coins"] { -webkit-mask-image: url("/static/icons/coins.svg"); mask-image: url("/static/icons/coins.svg"); }
+[data-icon="laptop"] { -webkit-mask-image: url("/static/icons/laptop.svg"); mask-image: url("/static/icons/laptop.svg"); }
+[data-icon="graduation-cap"] { -webkit-mask-image: url("/static/icons/graduation-cap.svg"); mask-image: url("/static/icons/graduation-cap.svg"); }
+[data-icon="building-2"] { -webkit-mask-image: url("/static/icons/building-2.svg"); mask-image: url("/static/icons/building-2.svg"); }
+[data-icon="gift"] { -webkit-mask-image: url("/static/icons/gift.svg"); mask-image: url("/static/icons/gift.svg"); }
+[data-icon="plus-circle"] { -webkit-mask-image: url("/static/icons/plus-circle.svg"); mask-image: url("/static/icons/plus-circle.svg"); }
