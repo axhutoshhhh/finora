@@ -2,6 +2,13 @@
 
 All notable changes to Finora are documented in this file.
 
+## [1.0.0] - 2026-11-27 (Phase 5 — Stable Release & Public Distribution)
+
+### Added
+- MIT `LICENSE`, `CONTRIBUTING.md`, static GitHub Pages showcase (`site/`), and university evaluation/viva documentation.
+- `pytest-cov` branch & line coverage reporting (`78%` overall across `3,778` statements / `1,202` branches).
+- Final `Finora-v1.0.0-macos-arm64.zip` release archive and `SHA256SUMS.txt`.
+
 ## [0.3.0] - 2026-11-27 (Phase 3 — Advanced Features, Analytics & Financial Intelligence)
 
 ### Added

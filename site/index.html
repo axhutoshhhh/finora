@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finora — Local-First Personal Finance for macOS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <strong>Finora</strong>
+      <nav aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#performance">Performance</a>
+        <a href="#download">Download</a>
+        <a href="https://github.com/axhutoshhhh/finora">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>Local-first personal finance for macOS.</h1>
+        <p>Finora is an offline-first desktop application built with Python, Flask, SQLite, and WKWebView. It combines multi-account expense tracking, monthly budgeting, interactive reports, savings goals, and recurring payments without cloud accounts or telemetry.</p>
+        <p>
+          <a class="btn" href="https://github.com/axhutoshhhh/finora/releases/tag/v1.0.0">Download v1.0.0 (Apple Silicon)</a>
+          <a class="btn btn-secondary" href="https://github.com/axhutoshhhh/finora">View Source</a>
+        </p>
+      </section>
+
+      <section id="features">
+        <h2>Core Features</h2>
+        <div class="grid">
+          <div class="card"><h3>Ledger &amp; Accounts</h3><p>Integer-paise arithmetic, 5 account types, transfers, credit card repayments, split transactions, and linked refunds.</p></div>
+          <div class="card"><h3>Budgets &amp; Reports</h3><p>Ten predefined categories, custom categories, monthly rollover, and locally bundled Chart.js analytics.</p></div>
+          <div class="card"><h3>Goals &amp; Recurring</h3><p>Ledger-backed savings allocations, recurring rules with calendar anchor preservation, and subscription tracking.</p></div>
+          <div class="card"><h3>Privacy &amp; Backups</h3><p>Loopback-only API, ephemeral launch token, strict CSP, SHA-256 ZIP backups, and an isolated demo workspace.</p></div>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <h2>Architecture</h2>
+        <p>Native macOS <code>WKWebView</code> (<code>pywebview</code>) → Loopback-only Waitress/Flask API → Authoritative Python Services → Parameterized SQLite Repositories. Local data is stored in <code>~/Library/Application Support/Finora/</code> with <code>0700</code>/<code>0600</code> permissions.</p>
+      </section>
+
+      <section id="performance">
+        <h2>Verified Performance</h2>
+        <p>On a 10,000-transaction synthetic dataset, Phase 4 indexing and frontend module optimization reduced median Overview UI loading from <strong>230.68 ms</strong> to <strong>82.41 ms</strong> (<strong>-64.3%</strong>), and 100,000-row Overview backend queries from <strong>694.04 ms</strong> to <strong>318.67 ms</strong> (<strong>-54.1%</strong>).</p>
+      </section>
+
+      <section id="download">
+        <h2>Download &amp; Installation</h2>
+        <p><strong>Version 1.0.0</strong> · Apple Silicon (<code>arm64</code>) · Tested on macOS 27.0.1. Packaged builds use local ad-hoc code signing (not Apple Developer ID notarized). You can also run directly from source with Python 3.13+.</p>
+      </section>
+    </main>
+
+    <footer>
+      <p>Finora · MIT License · <a href="https://github.com/axhutoshhhh/finora">axhutoshhhh/finora</a></p>
+    </footer>
+  </div>
+</body>
+</html>
