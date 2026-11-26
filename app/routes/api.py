@@ -480,3 +480,81 @@ def update_appearance() -> tuple[Response, int]:
     if callback is not None:
         callback(updated["appearance"])
     return jsonify(updated), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: Analytics & Reports
+# ---------------------------------------------------------------------------
+
+
+def _parse_int_list_arg(name: str) -> list[int] | None:
+    raw = request.args.get(name, "").strip()
+    if not raw:
+        return None
+    out: list[int] = []
+    for part in raw.split(","):
+        p = part.strip()
+        if not p:
+            continue
+        if not p.isdigit() or int(p) <= 0:
+            raise ValidationError(f"Invalid {name} filter.", field=name)
+        out.append(int(p))
+    return out or None
+
+
+def _analytics_report_from_args() -> dict[str, object]:
+    from app.services import analytics_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return analytics_service.get_full_analytics_report(
+        db_path,
+        preset=request.args.get("preset", "current_month"),
+        start_date=request.args.get("start_date"),
+        end_date=request.args.get("end_date"),
+        account_ids=_parse_int_list_arg("account_ids"),
+        category_ids=_parse_int_list_arg("category_ids"),
+    )
+
+
+@api_bp.get("/analytics/report")
+def get_analytics_report() -> tuple[Response, int]:
+    """Return complete reconciled analytics payload for Reports."""
+    return jsonify(_analytics_report_from_args()), 200
+
+
+@api_bp.get("/analytics/summary")
+def get_analytics_summary() -> tuple[Response, int]:
+    rep = _analytics_report_from_args()
+    return jsonify(
+        {"period": rep["period"], "summary": rep["summary"], "comparison": rep["comparison"]}
+    ), 200
+
+
+@api_bp.get("/analytics/income-expense")
+def get_analytics_income_expense() -> tuple[Response, int]:
+    rep = _analytics_report_from_args()
+    return jsonify({"period": rep["period"], "monthly_series": rep["monthly_series"]}), 200
+
+
+@api_bp.get("/analytics/categories")
+def get_analytics_categories() -> tuple[Response, int]:
+    rep = _analytics_report_from_args()
+    return jsonify({"period": rep["period"], "categories": rep["categories"]}), 200
+
+
+@api_bp.get("/analytics/merchants")
+def get_analytics_merchants() -> tuple[Response, int]:
+    rep = _analytics_report_from_args()
+    return jsonify({"period": rep["period"], "merchants": rep["merchants"]}), 200
+
+
+@api_bp.get("/analytics/balance-history")
+def get_analytics_balance_history() -> tuple[Response, int]:
+    rep = _analytics_report_from_args()
+    return jsonify({"period": rep["period"], "balance_history": rep["balance_history"]}), 200
+
+
+@api_bp.get("/analytics/budgets")
+def get_analytics_budgets() -> tuple[Response, int]:
+    rep = _analytics_report_from_args()
+    return jsonify({"period": rep["period"], "budget_performance": rep["budget_performance"]}), 200

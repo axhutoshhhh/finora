@@ -14,6 +14,11 @@ _VIEW_TITLES = {
     "transactions": "Transactions",
     "accounts": "Accounts",
     "budgets": "Budgets",
+    "reports": "Reports",
+    "goals": "Savings Goals",
+    "recurring": "Recurring Payments",
+    "calendar": "Calendar",
+    "insights": "Insights",
     "settings": "Settings",
 }
 
@@ -54,6 +59,36 @@ def accounts_page() -> str:
 def budgets_page() -> str:
     """Render the Finora desktop shell initialized to Budgets."""
     return _render_shell("budgets")
+
+
+@pages_bp.get("/reports")
+def reports_page() -> str:
+    """Render the Finora desktop shell initialized to Reports."""
+    return _render_shell("reports")
+
+
+@pages_bp.get("/goals")
+def goals_page() -> str:
+    """Render the Finora desktop shell initialized to Savings Goals."""
+    return _render_shell("goals")
+
+
+@pages_bp.get("/recurring")
+def recurring_page() -> str:
+    """Render the Finora desktop shell initialized to Recurring Payments."""
+    return _render_shell("recurring")
+
+
+@pages_bp.get("/calendar")
+def calendar_page() -> str:
+    """Render the Finora desktop shell initialized to Calendar."""
+    return _render_shell("calendar")
+
+
+@pages_bp.get("/insights")
+def insights_page() -> str:
+    """Render the Finora desktop shell initialized to Insights."""
+    return _render_shell("insights")
 
 
 @pages_bp.get("/settings")
