@@ -2,19 +2,22 @@
 
 Finora is an offline-first, single-user personal finance desktop application for macOS (Apple Silicon).
 
-> **Current status**: **Phase 1 (`v0.1.0`) — Foundation, Architecture & Design**.  
+> **Current status**: **Phase 2 (`v0.2.0`) — Core Financial Functionality**.  
 > Finora is under active phased development and is not yet a feature-complete release. See [CHANGELOG.md](CHANGELOG.md), [docs/progress.md](docs/progress.md), and [docs/known-issues.md](docs/known-issues.md) for current scope and limitations.
 
-## Implemented Phase 1 Functionality
+## Implemented Functionality (Phases 1 & 2)
 
-- Launches directly into a native macOS desktop window (`pywebview` + `WKWebView`) without login, accounts, onboarding wizards, or an internet connection.
+- Launches directly into a native macOS desktop window (`pywebview` + `WKWebView`) without login, cloud accounts, onboarding wizards, or an internet connection.
 - Starts an embedded local Waitress WSGI server bound exclusively to `127.0.0.1` on an ephemeral port and tears it down cleanly on quit.
 - Protects local financial API routes (`/api/*`) with an ephemeral per-launch token delivered in memory, alongside `Host`, `Origin`, `Sec-Fetch-Site`, and strict Content Security Policy enforcement.
-- Initializes a versioned SQLite ledger schema (`transactions` + `postings` + `accounts` + `categories` + `settings` + `schema_migrations`) with foreign-key enforcement and WAL journaling.
+- Initializes and migrates a versioned SQLite ledger schema (`0001_initial_schema.sql` + `0002_phase2_core_financials.sql`) with automatic pre-migration `sqlite3.Connection.backup()`, foreign-key enforcement, and WAL journaling.
 - Idempotently seeds 10 predefined expense categories, 7 separate income categories, and a default `Cash` account (`INR`, `₹0.00`).
 - Parses monetary inputs using Python `Decimal`, stores exact integer minor units (`paise`), and formats values in Indian numbering (`₹1,25,000.00`).
-- Provides an end-to-end Phase 1 vertical slice: **Overview**, **Transactions** history, accessible **New Transaction** modal (`Cmd+N`) for income and expense entries, and **Settings** with persisted **System / Light / Dark** appearance.
-- Includes an early Apple Silicon (`arm64`) PyInstaller `.app` bundle configuration.
+- **Multi-Account & Transfer Engine**: `cash`, `bank`, `savings`, `wallet`, and `credit_card` accounts with credit limit/utilization/overpayment surplus tracking, archival/restore (`confirm_nonzero`), and asset-to-asset / asset-to-credit-card transfers.
+- **Full Ledger Operations**: Income, expense, multi-category split transactions, partial/full/split linked refunds with cross-month net spending, optimistic-concurrency editing (`expected_revision`), soft delete/restore/purge, parameterized search/filtering/sorting/pagination, and atomic bulk actions.
+- **Categories, Tags & Receipt Attachments**: Custom categories (preserving 10 system expense slugs and kind immutability), normalized tags, and `<= 5 MiB` PNG/JPEG/PDF receipt attachments with magic-byte verification and SHA-256 checksums.
+- **Monthly Budgets & Rollover**: Category monthly limits, overall monthly spending cap with allocation-exceeded warnings, unconfigured vs `₹0.00` limit distinction, deterministic up-to-60-month consecutive rollover, and `copy-previous`.
+- **Desktop UI**: 5-screen shell (**Overview**, **Transactions**, **Accounts**, **Budgets**, **Settings**), keyboard shortcuts (`Cmd+1..4`, `Cmd+,`, `Cmd+N`, `Cmd+F`, `Cmd+Z` undo), persisted **System / Light / Dark** appearance, and Apple Silicon (`arm64`) PyInstaller `.app` bundle.
 
 ## Technology Stack
 
@@ -56,10 +59,11 @@ Automated tests always run against temporary isolated databases and never read o
 .venv/bin/pip-audit -r requirements.lock
 ```
 
-Run the Phase 1 baseline benchmark:
+Run the Phase 1 and Phase 2 baseline benchmarks:
 
 ```bash
 .venv/bin/python benchmarks/baseline_phase1.py
+.venv/bin/python benchmarks/baseline_phase2.py
 ```
 
 ## Building the macOS Application

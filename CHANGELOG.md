@@ -2,6 +2,22 @@
 
 All notable changes to Finora are documented in this file.
 
+## [0.2.0] - 2026-11-27 (Phase 2 — Core Financial Functionality)
+
+### Added
+- **Database Migration `0002_phase2_core_financials.sql`**: Added account types/credit limits/archival, `transactions.parent_transaction_id` (linked refunds), `tags`, `transaction_tags`, `budgets`, `budget_settings`, `attachments`, Phase 2 indexes, automatic pre-migration `sqlite3.Connection.backup()` (`0700`/`0600`), and post-migration `PRAGMA foreign_key_check` / `integrity_check`.
+- **Accounts & Transfers**: Full support for `cash`, `bank`, `savings`, `wallet`, and `credit_card` accounts with credit limit/utilization/overpayment surplus tracking, archival (`confirm_nonzero`) and restore, and asset-to-asset / asset-to-credit-card transfers (excluding credit card outbound cash advances).
+- **Splits, Refunds, Editing & Bulk Actions**: Multi-category split transactions, partial/full/split linked refunds with cross-month net spending and delete/shrink locks, optimistic-concurrency `PATCH` (`expected_revision`), soft delete/restore/purge, parameterized `json_each(?)` search/filtering/sorting/pagination, and atomic bulk operations.
+- **Categories, Tags & Attachments**: Custom categories (preserving 10 system expense slugs and kind immutability), normalized tags, and receipt attachments (`<= 5 MiB` PNG/JPEG/PDF magic-byte verification, SHA-256 checksum, `0600` UUID storage).
+- **Monthly Budgets & Rollover**: Category monthly limits, overall monthly spending cap with allocation-exceeded warning, unconfigured vs `₹0.00` distinction, up-to-60-month consecutive rollover, and `copy-previous`.
+- **Desktop UI & Benchmarks**: Expanded 5-screen desktop shell (`Overview`, `Transactions`, `Accounts`, `Budgets`, `Settings`), keyboard shortcuts (`Cmd+1..4`, `Cmd+,`, `Cmd+N`, `Cmd+F`, `Cmd+Z` undo), native `<dialog>` workflows, and repeatable 0–100k dataset benchmark (`benchmarks/baseline_phase2.py`).
+
+### Fixed (Independent Phase 2 Audit)
+- Enforced the 64 KiB JSON body limit on chunked/unknown `Content-Length` requests alongside `MAX_ATTACHMENT_HTTP_BYTES` for scoped attachment uploads.
+- Preserved `opening_balance_minor` magnitude when updating only `opening_balance_direction` on a credit card account.
+- Checked `idempotency_key` replay/conflict before active-account/category validation so retries succeed even after archival.
+- Replaced float division with integer paise formatting when preserving refund allocations on edit, clamped negative-spend `usage_percent` at `0.0`, and fixed Settings `database_path` display.
+
 ## [0.1.0] - 2026-11-26 (Phase 1 — Foundation, Architecture & Design)
 
 ### Added

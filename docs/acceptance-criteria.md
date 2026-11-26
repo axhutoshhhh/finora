@@ -92,3 +92,37 @@ Status values: `Passed`, `Failed`, `Blocked`, `N/A`. Updated strictly from obser
 - [x] Git history contains meaningful development commits (`Passed` — incremental Milestone commits + local `v0.1.0` tag)
 - [x] Repository remains unpublished (`Passed` — `git remote -v` is empty)
 - [x] Phase 2 handover notes exist (`Passed` — recorded in Phase 1 completion handover & docs)
+
+---
+
+# Finora — Phase 2 Acceptance Criteria Tracker (`v0.2.0`)
+
+## Database Migration & Integrity
+- [x] `0002_phase2_core_financials.sql` migrates existing Phase 1 databases without data loss (`Passed` — `tests/unit/test_database.py` & `dist/Finora.app` synthetic Phase 1 DB migration test)
+- [x] Pre-migration `sqlite3.Connection.backup()` runs automatically with `0700`/`0600` permissions and `PRAGMA quick_check` (`Passed`)
+- [x] Post-migration `PRAGMA foreign_key_check` and `PRAGMA integrity_check` pass (`Passed`)
+
+## Accounts & Transfers
+- [x] All 5 account types (`cash`, `bank`, `savings`, `wallet`, `credit_card`) supported with accurate asset/liability/net-worth math (`Passed`)
+- [x] Credit card credit limit, available credit, and overpayment surplus tracked accurately (`Passed`)
+- [x] Account type locked after postings exist (`ConflictError`), non-zero archival requires `confirm_nonzero=True`, and historical totals remain intact (`Passed`)
+- [x] Transfers (`asset -> asset`, `asset -> credit_card`) are excluded from income/expense totals and reject outbound `credit_card` cash advances (`Passed`)
+
+## Transactions, Splits, Refunds, Search & Bulk
+- [x] Split transactions enforce exact sum-to-parent invariant and reject duplicate categories (`Passed`)
+- [x] Partial, full, and split refunds enforce remaining-refundable cap, date >= parent, cross-month net spending, and parent delete/shrink locks (`Passed`)
+- [x] Optimistic-concurrency `PATCH` (`expected_revision`), soft delete, undo restore, and purge work atomically (`Passed`)
+- [x] Search, filters, sorting, pagination (`json_each(?)`), and atomic bulk actions work across all filter dimensions (`Passed`)
+
+## Categories, Tags & Attachments
+- [x] Custom categories preserve 10 system expense slugs and immutable kind (`Passed`)
+- [x] Normalized tags and receipt attachments (`<= 5 MiB` PNG/JPEG/PDF magic-byte verification, SHA-256, `0600`) work end-to-end (`Passed`)
+
+## Monthly Budgets & Rollover
+- [x] Category & overall monthly budgets distinguish unconfigured vs `₹0.00` limits, warn on allocation > overall, and compute deterministic up-to-60-month rollover (`Passed`)
+- [x] `copy-previous` and randomized 45-step financial invariant tests pass (`Passed`)
+
+## Desktop UI, Security & Release Verification
+- [x] All 5 screens (`Overview`, `Transactions`, `Accounts`, `Budgets`, `Settings`), shortcuts (`Cmd+1..4`, `Cmd+,`, `Cmd+N`, `Cmd+F`, `Cmd+Z`), and `900×600` zero-overflow WebKit layout verified (`Passed`)
+- [x] Independent audit (`15a7eb0b-5496-4567-a4d8-860e24d7da68`) findings all fixed and regression-tested (`Passed`)
+- [x] `ruff`, `bandit`, `pip-audit`, `pytest`, `benchmarks/baseline_phase2.py`, and `dist/Finora.app` (`v0.2.0`) verification pass (`Passed`)
