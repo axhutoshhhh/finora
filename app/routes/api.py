@@ -8,7 +8,12 @@ from urllib.parse import urlparse
 
 from flask import Blueprint, Response, current_app, jsonify, request
 
-from app.services import overview_service, settings_service, transaction_service
+from app.services import (
+    account_service,
+    overview_service,
+    settings_service,
+    transaction_service,
+)
 from app.utils.errors import ValidationError
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -97,6 +102,15 @@ def create_transaction() -> tuple[Response, int]:
     return jsonify({"transaction": tx, "created": created}), status
 
 
+@api_bp.post("/transfers")
+def create_transfer() -> tuple[Response, int]:
+    """Record an atomic internal account transfer or credit card repayment."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    tx, created = transaction_service.create_transfer(db_path, payload)
+    return jsonify({"transaction": tx, "created": created}), (201 if created else 200)
+
+
 @api_bp.get("/categories")
 def list_categories() -> tuple[Response, int]:
     """Return active seeded categories, optionally filtered by kind."""
@@ -108,10 +122,55 @@ def list_categories() -> tuple[Response, int]:
 
 @api_bp.get("/accounts")
 def list_accounts() -> tuple[Response, int]:
-    """Return active financial accounts with authoritative balances."""
+    """Return financial accounts with authoritative balances and net worth summary."""
+    include_archived = request.args.get("include_archived", "0").lower() in {"1", "true", "yes"}
     db_path = current_app.config["FINORA_DB_PATH"]
-    accounts = transaction_service.list_accounts(db_path)
-    return jsonify({"accounts": accounts}), 200
+    data = account_service.list_accounts(db_path, include_archived=include_archived)
+    return jsonify(data), 200
+
+
+@api_bp.post("/accounts")
+def create_account() -> tuple[Response, int]:
+    """Create a new financial account (cash, bank, savings, wallet, or credit_card)."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    account = account_service.create_account(db_path, payload)
+    return jsonify({"account": account}), 201
+
+
+@api_bp.get("/accounts/<int:account_id>")
+def get_account_detail(account_id: int) -> tuple[Response, int]:
+    """Return detailed account view with activity stats and recent entries."""
+    db_path = current_app.config["FINORA_DB_PATH"]
+    detail = account_service.get_account_detail(db_path, account_id)
+    return jsonify(detail), 200
+
+
+@api_bp.patch("/accounts/<int:account_id>")
+def update_account(account_id: int) -> tuple[Response, int]:
+    """Update editable account metadata, opening balance, or credit limit."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    account = account_service.update_account(db_path, account_id, payload)
+    return jsonify({"account": account}), 200
+
+
+@api_bp.post("/accounts/<int:account_id>/archive")
+def archive_account(account_id: int) -> tuple[Response, int]:
+    """Archive an account while preserving historical ledger records."""
+    payload = request.get_json(silent=True)
+    confirm_nonzero = bool(isinstance(payload, dict) and payload.get("confirm_nonzero") is True)
+    db_path = current_app.config["FINORA_DB_PATH"]
+    account = account_service.archive_account(db_path, account_id, confirm_nonzero=confirm_nonzero)
+    return jsonify({"account": account}), 200
+
+
+@api_bp.post("/accounts/<int:account_id>/restore")
+def restore_account(account_id: int) -> tuple[Response, int]:
+    """Restore an archived account."""
+    db_path = current_app.config["FINORA_DB_PATH"]
+    account = account_service.restore_account(db_path, account_id)
+    return jsonify({"account": account}), 200
 
 
 @api_bp.get("/settings")
