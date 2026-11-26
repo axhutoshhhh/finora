@@ -12,6 +12,8 @@ pages_bp = Blueprint("pages", __name__)
 _VIEW_TITLES = {
     "overview": "Overview",
     "transactions": "Transactions",
+    "accounts": "Accounts",
+    "budgets": "Budgets",
     "settings": "Settings",
 }
 
@@ -40,6 +42,18 @@ def overview_page() -> str:
 def transactions_page() -> str:
     """Render the Finora desktop shell initialized to Transactions."""
     return _render_shell("transactions")
+
+
+@pages_bp.get("/accounts")
+def accounts_page() -> str:
+    """Render the Finora desktop shell initialized to Accounts."""
+    return _render_shell("accounts")
+
+
+@pages_bp.get("/budgets")
+def budgets_page() -> str:
+    """Render the Finora desktop shell initialized to Budgets."""
+    return _render_shell("budgets")
 
 
 @pages_bp.get("/settings")

@@ -30,6 +30,18 @@
             </a>
           </li>
           <li>
+            <a href="/accounts" class="nav-link" data-nav-view="accounts" {% if active_view == "accounts" %}aria-current="page"{% endif %}>
+              <span class="icon" data-icon="landmark" aria-hidden="true"></span>
+              <span>Accounts</span>
+            </a>
+          </li>
+          <li>
+            <a href="/budgets" class="nav-link" data-nav-view="budgets" {% if active_view == "budgets" %}aria-current="page"{% endif %}>
+              <span class="icon" data-icon="pie-chart" aria-hidden="true"></span>
+              <span>Budgets</span>
+            </a>
+          </li>
+          <li>
             <a href="/settings" class="nav-link" data-nav-view="settings" {% if active_view == "settings" %}aria-current="page"{% endif %}>
               <span class="icon" data-icon="settings" aria-hidden="true"></span>
               <span>Settings</span>
@@ -43,8 +55,19 @@
       <div class="sidebar-account">
         <span class="sidebar-account-label">
           <span class="icon icon-sm" data-icon="wallet" aria-hidden="true"></span>
-          <span>Cash</span>
+          <span>Assets</span>
         </span>
+        <span id="sidebar-assets-balance" class="sidebar-account-balance tabular-nums">₹0.00</span>
+      </div>
+      <div class="sidebar-account">
+        <span class="sidebar-account-label">
+          <span class="icon icon-sm" data-icon="credit-card" aria-hidden="true"></span>
+          <span>Card Debt</span>
+        </span>
+        <span id="sidebar-liabilities-balance" class="sidebar-account-balance tabular-nums">₹0.00</span>
+      </div>
+      <div class="sidebar-account">
+        <span class="sidebar-account-label"><span>Net Worth</span></span>
         <span id="sidebar-cash-balance" class="sidebar-account-balance tabular-nums">₹0.00</span>
       </div>
       <div class="sidebar-status">Offline local ledger</div>
@@ -71,21 +94,54 @@
         <div id="app-live-status" class="visually-hidden" role="status" aria-live="polite"></div>
 
         <div id="global-error-banner" class="banner banner-error" role="alert" hidden>
-          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
-          <span id="global-error-text"></span>
+          <span class="banner-main">
+            <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+            <span id="global-error-text"></span>
+          </span>
         </div>
 
         <div id="global-success-banner" class="banner banner-success" role="status" hidden>
-          <span class="icon icon-sm" data-icon="check-circle-2" aria-hidden="true"></span>
-          <span id="global-success-text"></span>
+          <span class="banner-main">
+            <span class="icon icon-sm" data-icon="check-circle-2" aria-hidden="true"></span>
+            <span id="global-success-text"></span>
+          </span>
+          <button type="button" id="global-undo-btn" class="btn btn-secondary btn-sm" hidden>
+            <span class="icon icon-sm" data-icon="undo-2" aria-hidden="true"></span>
+            <span>Undo</span>
+          </button>
         </div>
 
+        <!-- OVERVIEW -->
         <section id="view-overview" class="view-panel" aria-labelledby="page-title" {% if active_view != "overview" %}hidden{% endif %}>
-          <div class="overview-ledger-strip" aria-label="Financial summary">
+          <div class="section-bar">
+            <div class="month-stepper" role="group" aria-label="Overview month">
+              <button type="button" id="overview-prev-month" class="btn-icon" aria-label="Previous month">
+                <span class="icon icon-sm" data-icon="chevron-left" aria-hidden="true"></span>
+              </button>
+              <span id="overview-month-picker-label" class="month-stepper-label">This month</span>
+              <button type="button" id="overview-next-month" class="btn-icon" aria-label="Next month">
+                <span class="icon icon-sm" data-icon="chevron-right" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="section-actions">
+              <button type="button" id="overview-transfer-btn" class="btn btn-secondary btn-sm">
+                <span class="icon icon-sm" data-icon="arrow-left-right" aria-hidden="true"></span>
+                <span>Transfer</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="overview-ledger-strip overview-ledger-strip-expanded" aria-label="Financial summary">
             <div class="balance-primary">
-              <span class="metric-label">Current Balance</span>
+              <span class="metric-label">Net Financial Position</span>
               <span id="overview-balance" class="balance-figure tabular-nums">₹0.00</span>
-              <span class="metric-meta">Cash account (INR)</span>
+              <span id="overview-position-meta" class="metric-meta">Assets minus card debt</span>
+            </div>
+
+            <div class="metric-block">
+              <span class="metric-label">Total Assets</span>
+              <span id="overview-assets" class="metric-value tabular-nums">₹0.00</span>
+              <span id="overview-liabilities-meta" class="metric-meta">Card debt: ₹0.00</span>
             </div>
 
             <div class="metric-block">
@@ -95,15 +151,33 @@
             </div>
 
             <div class="metric-block">
-              <span class="metric-label">Monthly Expenses</span>
+              <span class="metric-label">Net Expenses</span>
               <span id="overview-expense" class="metric-value tabular-nums amount-negative">₹0.00</span>
-              <span id="overview-month-label-exp" class="metric-meta">This month</span>
+              <span id="overview-month-label-exp" class="metric-meta">Gross ₹0.00 · Refunds ₹0.00</span>
             </div>
 
             <div class="metric-block">
               <span class="metric-label">Monthly Surplus</span>
               <span id="overview-surplus" class="metric-value tabular-nums">₹0.00</span>
-              <span id="overview-surplus-meta" class="metric-meta">Income minus expenses</span>
+              <span id="overview-surplus-meta" class="metric-meta">Income minus net expenses</span>
+            </div>
+          </div>
+
+          <div class="overview-subgrid">
+            <div>
+              <div class="section-header">
+                <h2 class="section-title">Accounts</h2>
+                <button type="button" id="overview-manage-accounts-btn" class="btn-link">Manage</button>
+              </div>
+              <div id="overview-accounts-list" class="overview-mini-list"></div>
+            </div>
+
+            <div>
+              <div class="section-header">
+                <h2 class="section-title">Monthly Budget Status</h2>
+                <button type="button" id="overview-manage-budgets-btn" class="btn-link">View budgets</button>
+              </div>
+              <div id="overview-budgets-list" class="overview-mini-list"></div>
             </div>
           </div>
 
@@ -116,7 +190,7 @@
             <span class="icon icon-lg empty-state-icon" data-icon="inbox" aria-hidden="true"></span>
             <h3 class="empty-state-title">No transactions recorded yet</h3>
             <p class="empty-state-copy">
-              Your Cash ledger starts at ₹0.00. Record an income or expense entry to update your balance and monthly summary.
+              Your Cash ledger starts at ₹0.00. Record an income, expense, or transfer entry to update your balances and monthly summary.
             </p>
             <button type="button" id="overview-empty-add-btn" class="btn btn-secondary">
               <span class="icon icon-sm" data-icon="plus" aria-hidden="true"></span>
@@ -131,7 +205,7 @@
                 <tr>
                   <th scope="col">Date</th>
                   <th scope="col">Category</th>
-                  <th scope="col">Description</th>
+                  <th scope="col">Merchant &amp; Note</th>
                   <th scope="col">Account</th>
                   <th scope="col" class="col-amount">Amount</th>
                 </tr>
@@ -141,17 +215,101 @@
           </div>
         </section>
 
+        <!-- TRANSACTIONS -->
         <section id="view-transactions" class="view-panel" aria-labelledby="page-title" {% if active_view != "transactions" %}hidden{% endif %}>
           <div class="section-header">
             <h2 class="section-title">Transaction History</h2>
             <span id="tx-history-count" class="section-meta">0 entries</span>
           </div>
 
+          <div class="filter-panel" aria-label="Search and filter transactions">
+            <div class="filter-top-row">
+              <div class="search-input-wrap">
+                <span class="icon icon-sm" data-icon="search" aria-hidden="true"></span>
+                <label for="tx-search-input" class="visually-hidden">Search transactions</label>
+                <input id="tx-search-input" type="search" class="search-input" placeholder="Search merchant, note, category, account, or tag (⌘F)">
+              </div>
+              <label for="tx-filter-sort" class="visually-hidden">Sort transactions</label>
+              <select id="tx-filter-sort" class="filter-select">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="amount_desc">Highest amount</option>
+                <option value="amount_asc">Lowest amount</option>
+                <option value="merchant_asc">Merchant A–Z</option>
+              </select>
+              <label for="tx-filter-deleted" class="visually-hidden">Deleted filter</label>
+              <select id="tx-filter-deleted" class="filter-select">
+                <option value="active">Active entries</option>
+                <option value="deleted">Deleted (Trash)</option>
+                <option value="all">All entries</option>
+              </select>
+              <button type="button" id="tx-filters-toggle-btn" class="btn btn-secondary btn-sm" aria-expanded="false">
+                <span class="icon icon-sm" data-icon="sliders-horizontal" aria-hidden="true"></span>
+                <span>Filters</span>
+              </button>
+              <button type="button" id="tx-filters-reset-btn" class="btn btn-link btn-sm">Reset</button>
+            </div>
+
+            <div id="tx-advanced-filters" class="filter-grid" hidden>
+              <select id="tx-filter-period" class="filter-select" aria-label="Month preset">
+                <option value="">All dates</option>
+                <option value="current_month">Current month</option>
+                <option value="previous_month">Previous month</option>
+              </select>
+              <input id="tx-filter-date-from" type="date" class="filter-input" aria-label="From date">
+              <input id="tx-filter-date-to" type="date" class="filter-input" aria-label="To date">
+              <select id="tx-filter-type" class="filter-select" aria-label="Transaction type">
+                <option value="">All types</option>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+                <option value="transfer">Transfer</option>
+                <option value="refund">Refund</option>
+              </select>
+              <select id="tx-filter-account" class="filter-select" aria-label="Account filter">
+                <option value="">All accounts</option>
+              </select>
+              <select id="tx-filter-category" class="filter-select" aria-label="Category filter">
+                <option value="">All categories</option>
+              </select>
+              <select id="tx-filter-method" class="filter-select" aria-label="Payment method filter">
+                <option value="">All payment methods</option>
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="debit_card">Debit Card</option>
+                <option value="credit_card">Credit Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="other">Other</option>
+              </select>
+              <select id="tx-filter-tag" class="filter-select" aria-label="Tag filter">
+                <option value="">All tags</option>
+              </select>
+              <input id="tx-filter-min" type="text" inputmode="decimal" class="filter-input" placeholder="Min ₹" aria-label="Minimum amount">
+              <input id="tx-filter-max" type="text" inputmode="decimal" class="filter-input" placeholder="Max ₹" aria-label="Maximum amount">
+            </div>
+          </div>
+
+          <div id="tx-bulk-bar" class="bulk-bar" hidden>
+            <strong id="tx-bulk-count">0 selected</strong>
+            <div class="bulk-actions">
+              <select id="tx-bulk-category-select" class="filter-select" aria-label="Bulk category">
+                <option value="">Assign category…</option>
+              </select>
+              <button type="button" id="tx-bulk-apply-cat-btn" class="btn btn-secondary btn-sm">Apply Category</button>
+              <select id="tx-bulk-tag-select" class="filter-select" aria-label="Bulk tag">
+                <option value="">Add tag…</option>
+              </select>
+              <button type="button" id="tx-bulk-apply-tag-btn" class="btn btn-secondary btn-sm">Apply Tag</button>
+              <button type="button" id="tx-bulk-delete-btn" class="btn btn-destructive btn-sm">Delete Selected</button>
+              <button type="button" id="tx-bulk-restore-btn" class="btn btn-secondary btn-sm" hidden>Restore Selected</button>
+              <button type="button" id="tx-bulk-clear-btn" class="btn btn-link btn-sm">Clear</button>
+            </div>
+          </div>
+
           <div id="tx-empty" class="empty-state" hidden>
             <span class="icon icon-lg empty-state-icon" data-icon="inbox" aria-hidden="true"></span>
-            <h3 class="empty-state-title">No transaction history</h3>
+            <h3 class="empty-state-title">No matching transactions</h3>
             <p class="empty-state-copy">
-              Recorded income and expense entries appear here in reverse chronological order.
+              Recorded transactions appear here in chronological order. Try adjusting filters or add a new entry.
             </p>
             <button type="button" id="tx-empty-add-btn" class="btn btn-secondary">
               <span class="icon icon-sm" data-icon="plus" aria-hidden="true"></span>
@@ -164,12 +322,16 @@
               <caption id="tx-table-caption" class="visually-hidden">All recorded transactions</caption>
               <thead>
                 <tr>
+                  <th scope="col" class="col-check">
+                    <input type="checkbox" id="tx-select-all-visible" aria-label="Select all visible rows">
+                  </th>
                   <th scope="col">Date</th>
                   <th scope="col">Category</th>
-                  <th scope="col">Description</th>
+                  <th scope="col">Merchant &amp; Details</th>
                   <th scope="col">Type</th>
                   <th scope="col">Account</th>
                   <th scope="col" class="col-amount">Amount</th>
+                  <th scope="col" class="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody id="tx-history-body"></tbody>
@@ -180,87 +342,292 @@
           </div>
         </section>
 
-        <section id="view-settings" class="view-panel" aria-labelledby="page-title" {% if active_view != "settings" %}hidden{% endif %}>
-          <div class="settings-stack">
-            <div class="settings-group">
-              <h2 class="settings-group-title">Appearance</h2>
-              <p class="settings-group-desc">Choose how Finora matches or overrides your macOS appearance.</p>
-              <fieldset class="appearance-fieldset">
-                <legend class="visually-hidden">Application appearance</legend>
-
-                <label class="appearance-option">
-                  <input type="radio" class="appearance-radio" name="appearance" value="system">
-                  <span class="appearance-card">
-                    <span class="appearance-name">
-                      <span class="icon icon-sm" data-icon="monitor" aria-hidden="true"></span>
-                      <span>System</span>
-                    </span>
-                    <span id="system-appearance-hint" class="appearance-hint">Follows macOS</span>
-                  </span>
-                </label>
-
-                <label class="appearance-option">
-                  <input type="radio" class="appearance-radio" name="appearance" value="light">
-                  <span class="appearance-card">
-                    <span class="appearance-name">
-                      <span class="icon icon-sm" data-icon="sun" aria-hidden="true"></span>
-                      <span>Light</span>
-                    </span>
-                    <span class="appearance-hint">Warm stone surface</span>
-                  </span>
-                </label>
-
-                <label class="appearance-option">
-                  <input type="radio" class="appearance-radio" name="appearance" value="dark">
-                  <span class="appearance-card">
-                    <span class="appearance-name">
-                      <span class="icon icon-sm" data-icon="moon" aria-hidden="true"></span>
-                      <span>Dark</span>
-                    </span>
-                    <span class="appearance-hint">Low-glare charcoal</span>
-                  </span>
-                </label>
-              </fieldset>
+        <!-- ACCOUNTS -->
+        <section id="view-accounts" class="view-panel" aria-labelledby="page-title" {% if active_view != "accounts" %}hidden{% endif %}>
+          <div class="section-bar">
+            <div class="section-actions">
+              <button type="button" id="accounts-new-btn" class="btn btn-primary btn-sm">
+                <span class="icon icon-sm" data-icon="plus" aria-hidden="true"></span>
+                <span>Add Account</span>
+              </button>
+              <button type="button" id="accounts-transfer-btn" class="btn btn-secondary btn-sm">
+                <span class="icon icon-sm" data-icon="arrow-left-right" aria-hidden="true"></span>
+                <span>Transfer Money</span>
+              </button>
             </div>
+            <label class="tag-check-pill">
+              <input type="checkbox" id="accounts-show-archived">
+              <span>Show archived accounts</span>
+            </label>
+          </div>
 
-            <div class="settings-group">
-              <h2 class="settings-group-title">Ledger Defaults</h2>
-              <p class="settings-group-desc">Authoritative defaults active in Phase 1.</p>
-              <dl class="info-dl">
-                <dt>Base Currency</dt>
-                <dd id="settings-currency">INR (₹)</dd>
-                <dt>Default Account</dt>
-                <dd>Cash</dd>
-              </dl>
+          <div class="overview-ledger-strip" aria-label="Accounts position summary">
+            <div class="balance-primary">
+              <span class="metric-label">Net Financial Position</span>
+              <span id="accounts-net-worth" class="balance-figure tabular-nums">₹0.00</span>
+              <span class="metric-meta">Assets minus card liabilities</span>
             </div>
-
-            <div class="settings-group">
-              <h2 class="settings-group-title">Local Storage &amp; Privacy</h2>
-              <p class="settings-group-desc">Finora stores all records strictly on this Mac with zero external network calls or telemetry.</p>
-              <dl class="info-dl">
-                <dt>Data Directory</dt>
-                <dd id="settings-data-dir" class="mono">—</dd>
-                <dt>SQLite Database</dt>
-                <dd id="settings-db-path" class="mono">—</dd>
-                <dt>Data Protection</dt>
-                <dd id="settings-encryption-note">—</dd>
-              </dl>
+            <div class="metric-block">
+              <span class="metric-label">Total Assets</span>
+              <span id="accounts-total-assets" class="metric-value tabular-nums amount-positive">₹0.00</span>
+              <span class="metric-meta">Cash, bank, savings, wallets</span>
             </div>
+            <div class="metric-block">
+              <span class="metric-label">Card Debt</span>
+              <span id="accounts-total-liabilities" class="metric-value tabular-nums amount-negative">₹0.00</span>
+              <span id="accounts-surplus-credit-meta" class="metric-meta">Outstanding card balances</span>
+            </div>
+          </div>
 
-            <div class="settings-group">
-              <h2 class="settings-group-title">About Finora</h2>
-              <div class="about-brand-row">
-                <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                  <path d="M6 5H26L22.5 10.5H12V27H6V5Z" fill="currentColor"></path>
-                  <path d="M14.5 14.5H24L20.8 19.5H14.5V14.5Z" fill="currentColor" opacity="0.72"></path>
-                  <rect x="14.5" y="23.5" width="4.5" height="3.5" fill="currentColor" opacity="0.48"></rect>
-                </svg>
-                <strong>Finora Desktop</strong>
-                <span class="section-meta">Version <span id="settings-version">{{ app_version }}</span> (Phase 1 Foundation)</span>
+          <div class="accounts-split-layout">
+            <div>
+              <div class="section-header">
+                <h2 class="section-title">Asset Accounts</h2>
               </div>
-              <p class="settings-group-desc">
-                Offline-first personal finance desktop application built with Python, Flask, SQLite, and macOS WebKit.
-              </p>
+              <div id="accounts-assets-list" class="account-group-list"></div>
+
+              <div class="section-header">
+                <h2 class="section-title">Credit Cards (Liabilities)</h2>
+              </div>
+              <div id="accounts-cards-list" class="account-group-list"></div>
+            </div>
+
+            <aside id="account-detail-panel" class="account-detail-panel" aria-label="Selected account details">
+              <div class="empty-state">
+                <p class="empty-state-copy">Select an account to view its balance breakdown, recent ledger entries, or edit/archive controls.</p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- BUDGETS -->
+        <section id="view-budgets" class="view-panel" aria-labelledby="page-title" {% if active_view != "budgets" %}hidden{% endif %}>
+          <div class="section-bar">
+            <div class="month-stepper" role="group" aria-label="Budget month">
+              <button type="button" id="budgets-prev-month" class="btn-icon" aria-label="Previous month">
+                <span class="icon icon-sm" data-icon="chevron-left" aria-hidden="true"></span>
+              </button>
+              <span id="budgets-month-label" class="month-stepper-label">This month</span>
+              <button type="button" id="budgets-next-month" class="btn-icon" aria-label="Next month">
+                <span class="icon icon-sm" data-icon="chevron-right" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="section-actions">
+              <button type="button" id="budgets-copy-prev-btn" class="btn btn-secondary btn-sm">
+                <span class="icon icon-sm" data-icon="copy" aria-hidden="true"></span>
+                <span>Copy Previous Month</span>
+              </button>
+              <button type="button" id="budgets-edit-overall-btn" class="btn btn-primary btn-sm">
+                <span class="icon icon-sm" data-icon="pencil" aria-hidden="true"></span>
+                <span>Overall Monthly Limit</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="budgets-mismatch-banner" class="banner banner-warning" role="status" hidden>
+            <span class="banner-main">
+              <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+              <span id="budgets-mismatch-text"></span>
+            </span>
+          </div>
+
+          <div class="overview-ledger-strip overview-ledger-strip-expanded" aria-label="Overall monthly budget summary">
+            <div class="balance-primary">
+              <span class="metric-label">Overall Monthly Limit</span>
+              <span id="budgets-overall-limit" class="balance-figure tabular-nums">Not set</span>
+              <span id="budgets-overall-status" class="metric-meta">Independent of category sum</span>
+            </div>
+            <div class="metric-block">
+              <span class="metric-label">Total Category Caps</span>
+              <span id="budgets-allocated-total" class="metric-value tabular-nums">₹0.00</span>
+              <span id="budgets-allocated-effective" class="metric-meta">With rollover: ₹0.00</span>
+            </div>
+            <div class="metric-block">
+              <span class="metric-label">Actual Net Spend</span>
+              <span id="budgets-actual-spend" class="metric-value tabular-nums amount-negative">₹0.00</span>
+              <span id="budgets-unbudgeted-spend" class="metric-meta">Unbudgeted: ₹0.00</span>
+            </div>
+            <div class="metric-block">
+              <span class="metric-label">Overall Remaining</span>
+              <span id="budgets-overall-remaining" class="metric-value tabular-nums">—</span>
+              <span class="metric-meta">Gross spend minus refunds</span>
+            </div>
+          </div>
+
+          <div class="section-header">
+            <h2 class="section-title">Expense Category Budgets</h2>
+            <span id="budgets-configured-meta" class="section-meta">0 configured</span>
+          </div>
+
+          <div class="table-wrapper" role="region" tabindex="0" aria-labelledby="budgets-table-caption">
+            <table class="ledger-table">
+              <caption id="budgets-table-caption" class="visually-hidden">Monthly expense category budgets</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Category</th>
+                  <th scope="col" class="col-amount">Base Cap</th>
+                  <th scope="col" class="col-amount">Rollover</th>
+                  <th scope="col" class="col-amount">Effective Cap</th>
+                  <th scope="col" class="col-amount">Net Spend</th>
+                  <th scope="col" class="col-amount">Remaining</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="budgets-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="view-settings" class="view-panel" aria-labelledby="page-title" {% if active_view != "settings" %}hidden{% endif %}>
+          <div class="tablist" role="tablist" aria-label="Settings sections">
+            <button type="button" role="tab" id="tab-settings-general" class="tab-btn" aria-selected="true" data-settings-tab="general">General &amp; Appearance</button>
+            <button type="button" role="tab" id="tab-settings-categories" class="tab-btn" aria-selected="false" data-settings-tab="categories">Categories</button>
+            <button type="button" role="tab" id="tab-settings-tags" class="tab-btn" aria-selected="false" data-settings-tab="tags">Tags</button>
+          </div>
+
+          <div id="settings-panel-general" role="tabpanel" aria-labelledby="tab-settings-general">
+            <div class="settings-stack">
+              <div class="settings-group">
+                <h2 class="settings-group-title">Appearance</h2>
+                <p class="settings-group-desc">Choose how Finora matches or overrides your macOS appearance.</p>
+                <fieldset class="appearance-fieldset">
+                  <legend class="visually-hidden">Application appearance</legend>
+
+                  <label class="appearance-option">
+                    <input type="radio" class="appearance-radio" name="appearance" value="system">
+                    <span class="appearance-card">
+                      <span class="appearance-name">
+                        <span class="icon icon-sm" data-icon="monitor" aria-hidden="true"></span>
+                        <span>System</span>
+                      </span>
+                      <span id="system-appearance-hint" class="appearance-hint">Follows macOS</span>
+                    </span>
+                  </label>
+
+                  <label class="appearance-option">
+                    <input type="radio" class="appearance-radio" name="appearance" value="light">
+                    <span class="appearance-card">
+                      <span class="appearance-name">
+                        <span class="icon icon-sm" data-icon="sun" aria-hidden="true"></span>
+                        <span>Light</span>
+                      </span>
+                      <span class="appearance-hint">Warm stone surface</span>
+                    </span>
+                  </label>
+
+                  <label class="appearance-option">
+                    <input type="radio" class="appearance-radio" name="appearance" value="dark">
+                    <span class="appearance-card">
+                      <span class="appearance-name">
+                        <span class="icon icon-sm" data-icon="moon" aria-hidden="true"></span>
+                        <span>Dark</span>
+                      </span>
+                      <span class="appearance-hint">Low-glare charcoal</span>
+                    </span>
+                  </label>
+                </fieldset>
+              </div>
+
+              <div class="settings-group">
+                <h2 class="settings-group-title">Ledger Defaults</h2>
+                <p class="settings-group-desc">Authoritative currency and active Phase 2 workspace settings.</p>
+                <dl class="info-dl">
+                  <dt>Base Currency</dt>
+                  <dd id="settings-currency">INR (₹)</dd>
+                  <dt>Default Account</dt>
+                  <dd>Cash</dd>
+                </dl>
+              </div>
+
+              <div class="settings-group">
+                <h2 class="settings-group-title">Local Storage &amp; Privacy</h2>
+                <p class="settings-group-desc">Finora stores all records strictly on this Mac with zero external network calls or telemetry.</p>
+                <dl class="info-dl">
+                  <dt>Data Directory</dt>
+                  <dd id="settings-data-dir" class="mono">—</dd>
+                  <dt>SQLite Database</dt>
+                  <dd id="settings-db-path" class="mono">—</dd>
+                  <dt>Data Protection</dt>
+                  <dd id="settings-encryption-note">—</dd>
+                </dl>
+              </div>
+
+              <div class="settings-group">
+                <h2 class="settings-group-title">About Finora</h2>
+                <div class="about-brand-row">
+                  <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                    <path d="M6 5H26L22.5 10.5H12V27H6V5Z" fill="currentColor"></path>
+                    <path d="M14.5 14.5H24L20.8 19.5H14.5V14.5Z" fill="currentColor" opacity="0.72"></path>
+                    <rect x="14.5" y="23.5" width="4.5" height="3.5" fill="currentColor" opacity="0.48"></rect>
+                  </svg>
+                  <strong>Finora Desktop</strong>
+                  <span class="section-meta">Version <span id="settings-version">{{ app_version }}</span> (Phase 2 Core)</span>
+                </div>
+                <p class="settings-group-desc">
+                  Offline-first personal finance desktop application built with Python, Flask, SQLite, and macOS WebKit.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="settings-panel-categories" role="tabpanel" aria-labelledby="tab-settings-categories" hidden>
+            <div class="section-bar">
+              <div>
+                <h2 class="settings-group-title">Categories</h2>
+                <p class="settings-group-desc">Ten predefined expense categories remain identifiable even if renamed. Income categories stay separate.</p>
+              </div>
+              <div class="section-actions">
+                <label class="tag-check-pill">
+                  <input type="checkbox" id="settings-cat-show-archived">
+                  <span>Show archived</span>
+                </label>
+                <button type="button" id="settings-new-cat-btn" class="btn btn-primary btn-sm">
+                  <span class="icon icon-sm" data-icon="plus" aria-hidden="true"></span>
+                  <span>New Category</span>
+                </button>
+              </div>
+            </div>
+            <div class="table-wrapper" role="region" tabindex="0" aria-label="Expense and income categories">
+              <table class="ledger-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Origin</th>
+                    <th scope="col" class="col-amount">Entries</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="settings-categories-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="settings-panel-tags" role="tabpanel" aria-labelledby="tab-settings-tags" hidden>
+            <div class="section-bar">
+              <div>
+                <h2 class="settings-group-title">Transaction Tags</h2>
+                <p class="settings-group-desc">Compact labels for cross-cutting tracking (such as Hostel, Travel, or Reimbursable).</p>
+              </div>
+              <form id="settings-tag-create-form" class="section-actions" novalidate>
+                <label for="settings-tag-name-input" class="visually-hidden">New tag name</label>
+                <input id="settings-tag-name-input" type="text" class="filter-input" maxlength="40" placeholder="New tag name…">
+                <button type="submit" class="btn btn-primary btn-sm">Add Tag</button>
+              </form>
+            </div>
+            <div class="table-wrapper" role="region" tabindex="0" aria-label="Transaction tags">
+              <table class="ledger-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Tag</th>
+                    <th scope="col" class="col-amount">Linked Entries</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="settings-tags-body"></tbody>
+              </table>
             </div>
           </div>
         </section>
@@ -269,6 +636,7 @@
   </div>
 </div>
 
+<!-- TRANSACTION / TRANSFER CREATE & EDIT DIALOG -->
 <dialog id="tx-dialog" class="tx-dialog" aria-labelledby="tx-dialog-title">
   <div class="dialog-header">
     <h1 id="tx-dialog-title" class="dialog-title">New Transaction</h1>
@@ -280,26 +648,37 @@
   <form id="tx-form" novalidate>
     <div class="dialog-body">
       <div id="tx-form-error" class="banner banner-error" role="alert" hidden>
-        <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
-        <span id="tx-form-error-text"></span>
+        <span class="banner-main">
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="tx-form-error-text"></span>
+        </span>
       </div>
 
-      <fieldset class="segmented-fieldset">
+      <fieldset id="tx-type-fieldset" class="segmented-fieldset">
         <legend class="visually-hidden">Transaction classification</legend>
-        <label class="segmented-option">
-          <input type="radio" class="segmented-radio" name="entry_type" value="expense" checked>
-          <span class="segmented-label">
-            <span class="icon icon-sm" data-icon="arrow-up-right" aria-hidden="true"></span>
-            <span>Expense</span>
-          </span>
-        </label>
-        <label class="segmented-option">
-          <input type="radio" class="segmented-radio" name="entry_type" value="income">
-          <span class="segmented-label">
-            <span class="icon icon-sm" data-icon="arrow-down-left" aria-hidden="true"></span>
-            <span>Income</span>
-          </span>
-        </label>
+        <div class="segmented-control segmented-control-three">
+          <label class="segmented-option">
+            <input type="radio" class="segmented-radio" name="entry_type" value="expense" checked>
+            <span class="segmented-label">
+              <span class="icon icon-sm" data-icon="arrow-up-right" aria-hidden="true"></span>
+              <span>Expense</span>
+            </span>
+          </label>
+          <label class="segmented-option">
+            <input type="radio" class="segmented-radio" name="entry_type" value="income">
+            <span class="segmented-label">
+              <span class="icon icon-sm" data-icon="arrow-down-left" aria-hidden="true"></span>
+              <span>Income</span>
+            </span>
+          </label>
+          <label class="segmented-option">
+            <input type="radio" class="segmented-radio" name="entry_type" value="transfer">
+            <span class="segmented-label">
+              <span class="icon icon-sm" data-icon="arrow-left-right" aria-hidden="true"></span>
+              <span>Transfer</span>
+            </span>
+          </label>
+        </div>
       </fieldset>
 
       <div class="form-field">
@@ -329,21 +708,72 @@
         </p>
       </div>
 
-      <div class="form-field">
-        <label for="tx-category" class="form-label">Category <span aria-hidden="true">*</span></label>
-        <select id="tx-category" name="category_id" class="form-control" aria-describedby="tx-category-error" required></select>
+      <!-- Standard Category OR Split (hidden when transfer) -->
+      <div id="tx-standard-category-block" class="form-field">
+        <div class="section-bar">
+          <label for="tx-category" class="form-label">Category <span aria-hidden="true">*</span></label>
+          <button type="button" id="tx-split-toggle-btn" class="btn-link btn-sm">
+            <span class="icon icon-sm" data-icon="split" aria-hidden="true"></span>
+            <span>Split across categories</span>
+          </button>
+        </div>
+        <select id="tx-category" name="category_id" class="form-control" aria-describedby="tx-category-error"></select>
         <p id="tx-category-error" class="field-error" hidden>
           <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
           <span id="tx-category-error-text"></span>
         </p>
       </div>
 
-      <div class="form-row-two">
+      <div id="tx-split-block" class="split-editor" hidden>
+        <div class="section-bar">
+          <strong class="form-label">Split Allocations</strong>
+          <span id="tx-split-remaining" class="field-hint tabular-nums">Remaining: ₹0.00</span>
+        </div>
+        <div id="tx-split-rows"></div>
+        <div class="section-actions">
+          <button type="button" id="tx-split-add-row-btn" class="btn btn-secondary btn-sm">
+            <span class="icon icon-sm" data-icon="plus" aria-hidden="true"></span>
+            <span>Add Category Row</span>
+          </button>
+          <button type="button" id="tx-split-cancel-btn" class="btn-link btn-sm">Use single category</button>
+        </div>
+        <p id="tx-splits-error" class="field-error" hidden>
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="tx-splits-error-text"></span>
+        </p>
+      </div>
+
+      <!-- Standard Single Account vs Transfer Source/Destination -->
+      <div id="tx-single-account-row" class="form-row-two">
         <div class="form-field">
           <label for="tx-account" class="form-label">Account <span aria-hidden="true">*</span></label>
-          <select id="tx-account" name="account_id" class="form-control" required></select>
+          <select id="tx-account" name="account_id" class="form-control"></select>
         </div>
+        <div class="form-field">
+          <label for="tx-payment-method" class="form-label">Payment Method</label>
+          <select id="tx-payment-method" name="payment_method" class="form-control">
+            <option value="cash">Cash</option>
+            <option value="upi">UPI</option>
+            <option value="debit_card">Debit Card</option>
+            <option value="credit_card">Credit Card</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="other" selected>Other</option>
+          </select>
+        </div>
+      </div>
 
+      <div id="tx-transfer-accounts-row" class="form-row-two" hidden>
+        <div class="form-field">
+          <label for="tx-from-account" class="form-label">From Account <span aria-hidden="true">*</span></label>
+          <select id="tx-from-account" name="from_account_id" class="form-control"></select>
+        </div>
+        <div class="form-field">
+          <label for="tx-to-account" class="form-label">To Account <span aria-hidden="true">*</span></label>
+          <select id="tx-to-account" name="to_account_id" class="form-control"></select>
+        </div>
+      </div>
+
+      <div class="form-row-two">
         <div class="form-field">
           <label for="tx-date" class="form-label">Date <span aria-hidden="true">*</span></label>
           <input id="tx-date" name="tx_date" type="date" class="form-control tabular-nums" aria-describedby="tx-date-error" required>
@@ -351,6 +781,10 @@
             <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
             <span id="tx-date-error-text"></span>
           </p>
+        </div>
+        <div id="tx-merchant-field" class="form-field">
+          <label for="tx-merchant" class="form-label">Merchant / Payee (optional)</label>
+          <input id="tx-merchant" name="merchant" type="text" class="form-control" maxlength="120" placeholder="e.g. Metro Mart, Employer">
         </div>
       </div>
 
@@ -370,6 +804,17 @@
           <span id="tx-description-error-text"></span>
         </p>
       </div>
+
+      <div class="form-field">
+        <span class="form-label">Tags (optional)</span>
+        <div id="tx-tags-picker" class="tag-checkbox-grid"></div>
+      </div>
+
+      <div class="form-field">
+        <label for="tx-attachment-input" class="form-label">Receipt / Invoice Attachment (PNG, JPEG, PDF ≤ 5 MiB)</label>
+        <input id="tx-attachment-input" type="file" accept=".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf" class="form-control">
+        <div id="tx-existing-attachments" class="attachment-list"></div>
+      </div>
     </div>
 
     <div class="dialog-footer">
@@ -377,5 +822,255 @@
       <button type="submit" id="tx-submit-btn" class="btn btn-primary">Save Transaction</button>
     </div>
   </form>
+</dialog>
+
+<!-- LINKED REFUND DIALOG -->
+<dialog id="refund-dialog" class="tx-dialog" aria-labelledby="refund-dialog-title">
+  <div class="dialog-header">
+    <h1 id="refund-dialog-title" class="dialog-title">Record Refund</h1>
+    <button type="button" id="refund-dialog-close" class="btn-icon" aria-label="Close dialog">
+      <span class="icon" data-icon="x" aria-hidden="true"></span>
+    </button>
+  </div>
+  <form id="refund-form" novalidate>
+    <div class="dialog-body">
+      <div id="refund-form-error" class="banner banner-error" role="alert" hidden>
+        <span class="banner-main">
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="refund-form-error-text"></span>
+        </span>
+      </div>
+      <p id="refund-parent-summary" class="field-hint"></p>
+      <div class="form-field">
+        <label for="refund-amount" class="form-label">Refund Amount (INR) <span aria-hidden="true">*</span></label>
+        <div class="amount-input-wrap">
+          <span class="amount-prefix" aria-hidden="true">₹</span>
+          <input id="refund-amount" type="text" class="form-control tabular-nums" inputmode="decimal" required>
+        </div>
+      </div>
+      <div id="refund-allocations-wrap" class="split-editor" hidden></div>
+      <div class="form-row-two">
+        <div class="form-field">
+          <label for="refund-account" class="form-label">Refund To Account</label>
+          <select id="refund-account" class="form-control"></select>
+        </div>
+        <div class="form-field">
+          <label for="refund-date" class="form-label">Refund Date</label>
+          <input id="refund-date" type="date" class="form-control tabular-nums" required>
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="refund-description" class="form-label">Note (optional)</label>
+        <input id="refund-description" type="text" class="form-control" maxlength="240" placeholder="e.g. Returned damaged item">
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" id="refund-cancel-btn" class="btn btn-secondary">Cancel</button>
+      <button type="submit" id="refund-submit-btn" class="btn btn-primary">Save Refund</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ACCOUNT CREATE / EDIT DIALOG -->
+<dialog id="account-dialog" class="tx-dialog" aria-labelledby="account-dialog-title">
+  <div class="dialog-header">
+    <h1 id="account-dialog-title" class="dialog-title">New Account</h1>
+    <button type="button" id="account-dialog-close" class="btn-icon" aria-label="Close dialog">
+      <span class="icon" data-icon="x" aria-hidden="true"></span>
+    </button>
+  </div>
+  <form id="account-form" novalidate>
+    <div class="dialog-body">
+      <div id="account-form-error" class="banner banner-error" role="alert" hidden>
+        <span class="banner-main">
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="account-form-error-text"></span>
+        </span>
+      </div>
+      <div class="form-row-two">
+        <div class="form-field">
+          <label for="account-name" class="form-label">Account Name <span aria-hidden="true">*</span></label>
+          <input id="account-name" type="text" class="form-control" maxlength="60" placeholder="e.g. HDFC Savings" required>
+        </div>
+        <div class="form-field">
+          <label for="account-type" class="form-label">Account Type <span aria-hidden="true">*</span></label>
+          <select id="account-type" class="form-control">
+            <option value="cash">Cash</option>
+            <option value="bank">Bank Account</option>
+            <option value="savings">Savings Account</option>
+            <option value="wallet">Digital Wallet</option>
+            <option value="credit_card">Credit Card</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-two">
+        <div class="form-field">
+          <label id="account-opening-label" for="account-opening-balance" class="form-label">Opening Balance (INR)</label>
+          <div class="amount-input-wrap">
+            <span class="amount-prefix" aria-hidden="true">₹</span>
+            <input id="account-opening-balance" type="text" class="form-control tabular-nums" inputmode="decimal" value="0.00">
+          </div>
+          <span class="field-hint">Opening balances adjust starting position without inflating monthly income.</span>
+        </div>
+        <div class="form-field">
+          <label for="account-opening-date" class="form-label">Opening Balance Date</label>
+          <input id="account-opening-date" type="date" class="form-control tabular-nums">
+        </div>
+      </div>
+      <div id="account-cc-fields" class="form-row-two" hidden>
+        <div class="form-field">
+          <label for="account-credit-limit" class="form-label">Credit Limit (INR, optional)</label>
+          <div class="amount-input-wrap">
+            <span class="amount-prefix" aria-hidden="true">₹</span>
+            <input id="account-credit-limit" type="text" class="form-control tabular-nums" inputmode="decimal" placeholder="e.g. 50000">
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="account-opening-dir" class="form-label">Opening Balance Type</label>
+          <select id="account-opening-dir" class="form-control">
+            <option value="debt">Existing Card Debt</option>
+            <option value="credit">Overpayment Credit</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="account-description" class="form-label">Notes (optional)</label>
+        <input id="account-description" type="text" class="form-control" maxlength="240" placeholder="Optional label (do not store account or card numbers)">
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" id="account-cancel-btn" class="btn btn-secondary">Cancel</button>
+      <button type="submit" id="account-submit-btn" class="btn btn-primary">Save Account</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- BUDGET EDITOR DIALOG (Category & Overall) -->
+<dialog id="budget-dialog" class="tx-dialog" aria-labelledby="budget-dialog-title">
+  <div class="dialog-header">
+    <h1 id="budget-dialog-title" class="dialog-title">Set Budget</h1>
+    <button type="button" id="budget-dialog-close" class="btn-icon" aria-label="Close dialog">
+      <span class="icon" data-icon="x" aria-hidden="true"></span>
+    </button>
+  </div>
+  <form id="budget-form" novalidate>
+    <div class="dialog-body">
+      <div id="budget-form-error" class="banner banner-error" role="alert" hidden>
+        <span class="banner-main">
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="budget-form-error-text"></span>
+        </span>
+      </div>
+      <p id="budget-dialog-context" class="field-hint"></p>
+      <div class="form-field">
+        <label for="budget-limit-input" class="form-label">Monthly Spending Limit (INR)</label>
+        <div class="amount-input-wrap">
+          <span class="amount-prefix" aria-hidden="true">₹</span>
+          <input id="budget-limit-input" type="text" class="form-control tabular-nums" inputmode="decimal" required>
+        </div>
+        <span class="field-hint">Enter 0 for an explicit zero-spending limit, or Remove Limit to leave unconfigured.</span>
+      </div>
+      <label id="budget-rollover-row" class="tag-check-pill">
+        <input type="checkbox" id="budget-rollover-checkbox">
+        <span>Carry forward positive unused budget into next month (Rollover)</span>
+      </label>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" id="budget-remove-btn" class="btn btn-destructive" hidden>Remove Limit</button>
+      <button type="button" id="budget-cancel-btn" class="btn btn-secondary">Cancel</button>
+      <button type="submit" id="budget-submit-btn" class="btn btn-primary">Save Budget</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- CATEGORY CREATE / EDIT DIALOG -->
+<dialog id="category-dialog" class="tx-dialog" aria-labelledby="category-dialog-title">
+  <div class="dialog-header">
+    <h1 id="category-dialog-title" class="dialog-title">New Category</h1>
+    <button type="button" id="category-dialog-close" class="btn-icon" aria-label="Close dialog">
+      <span class="icon" data-icon="x" aria-hidden="true"></span>
+    </button>
+  </div>
+  <form id="category-form" novalidate>
+    <div class="dialog-body">
+      <div id="category-form-error" class="banner banner-error" role="alert" hidden>
+        <span class="banner-main">
+          <span class="icon icon-sm" data-icon="alert-circle" aria-hidden="true"></span>
+          <span id="category-form-error-text"></span>
+        </span>
+      </div>
+      <div class="form-row-two">
+        <div class="form-field">
+          <label for="category-name-input" class="form-label">Category Name <span aria-hidden="true">*</span></label>
+          <input id="category-name-input" type="text" class="form-control" maxlength="48" required>
+        </div>
+        <div class="form-field">
+          <label for="category-kind-select" class="form-label">Classification</label>
+          <select id="category-kind-select" class="form-control">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="category-icon-select" class="form-label">Icon</label>
+        <select id="category-icon-select" class="form-control">
+          <option value="utensils">Utensils</option>
+          <option value="house">House</option>
+          <option value="car">Transportation</option>
+          <option value="shopping-bag">Shopping</option>
+          <option value="book-open">Books / Education</option>
+          <option value="heart-pulse">Healthcare</option>
+          <option value="film">Entertainment</option>
+          <option value="repeat">Subscriptions</option>
+          <option value="zap">Utilities</option>
+          <option value="briefcase">Work / Salary</option>
+          <option value="coins">Coins</option>
+          <option value="laptop">Tech / Freelance</option>
+          <option value="graduation-cap">Scholarship</option>
+          <option value="gift">Gift</option>
+          <option value="tag">Label / Custom</option>
+          <option value="circle-ellipsis">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" id="category-cancel-btn" class="btn btn-secondary">Cancel</button>
+      <button type="submit" id="category-submit-btn" class="btn btn-primary">Save Category</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- CONFIRMATION & ATTACHMENT PREVIEW DIALOGS -->
+<dialog id="confirm-dialog" class="tx-dialog" aria-labelledby="confirm-dialog-title">
+  <div class="dialog-header">
+    <h1 id="confirm-dialog-title" class="dialog-title">Confirm Action</h1>
+    <button type="button" id="confirm-dialog-close" class="btn-icon" aria-label="Close dialog">
+      <span class="icon" data-icon="x" aria-hidden="true"></span>
+    </button>
+  </div>
+  <div class="dialog-body">
+    <p id="confirm-dialog-message"></p>
+  </div>
+  <div class="dialog-footer">
+    <button type="button" id="confirm-cancel-btn" class="btn btn-secondary">Cancel</button>
+    <button type="button" id="confirm-ok-btn" class="btn btn-destructive">Confirm</button>
+  </div>
+</dialog>
+
+<dialog id="attachment-dialog" class="tx-dialog" aria-labelledby="attachment-dialog-title">
+  <div class="dialog-header">
+    <h1 id="attachment-dialog-title" class="dialog-title">Receipt Preview</h1>
+    <button type="button" id="attachment-dialog-close" class="btn-icon" aria-label="Close dialog">
+      <span class="icon" data-icon="x" aria-hidden="true"></span>
+    </button>
+  </div>
+  <div class="dialog-body">
+    <div id="attachment-preview-box" class="preview-media-box"></div>
+  </div>
+  <div class="dialog-footer">
+    <a id="attachment-download-link" class="btn btn-secondary" download>Download Copy</a>
+    <button type="button" id="attachment-close-btn" class="btn btn-primary">Done</button>
+  </div>
 </dialog>
 {% endblock %}
