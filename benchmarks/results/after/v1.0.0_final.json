@@ -1,53 +1,53 @@
 {
   "backend_10k": {
     "overview_load": {
-      "median_ms": 24.62,
-      "p95_ms": 24.8,
-      "max_ms": 26.78,
+      "median_ms": 24.77,
+      "p95_ms": 32.11,
+      "max_ms": 40.52,
       "iterations": 12,
       "timed_out": false
     },
     "tx_amount_desc": {
-      "median_ms": 10.49,
-      "p95_ms": 10.62,
-      "max_ms": 10.68,
+      "median_ms": 12.33,
+      "p95_ms": 14.85,
+      "max_ms": 14.93,
       "iterations": 12,
       "timed_out": false
     },
     "analytics_report": {
-      "median_ms": 49.17,
-      "p95_ms": 49.75,
-      "max_ms": 51.36,
+      "median_ms": 53.31,
+      "p95_ms": 59.83,
+      "max_ms": 62.73,
       "iterations": 12,
       "timed_out": false
     }
   },
   "backend_100k": {
     "overview_load": {
-      "median_ms": 332.02,
-      "p95_ms": 337.58,
-      "max_ms": 337.58,
+      "median_ms": 331.27,
+      "p95_ms": 333.38,
+      "max_ms": 333.38,
       "iterations": 5,
       "timed_out": false
     },
     "tx_amount_desc": {
-      "median_ms": 92.71,
-      "p95_ms": 94.49,
-      "max_ms": 94.49,
+      "median_ms": 90.87,
+      "p95_ms": 92.66,
+      "max_ms": 92.66,
       "iterations": 5,
       "timed_out": false
     }
   },
   "ui_10k": {
     "overview_ui_ms": {
-      "median_ms": 129.32,
-      "p95_ms": 280.25,
-      "max_ms": 280.25
+      "median_ms": 121.86,
+      "p95_ms": 363.72,
+      "max_ms": 363.72
     },
     "transactions_ui_ms": {
-      "median_ms": 136.13,
-      "p95_ms": 166.74,
-      "max_ms": 166.74
+      "median_ms": 125.6,
+      "p95_ms": 294.83,
+      "max_ms": 294.83
     }
   }
 }

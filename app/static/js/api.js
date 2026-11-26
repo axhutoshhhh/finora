@@ -5,6 +5,7 @@
 
 let _launchToken = null;
 let _tokenPromise = null;
+let _workspaceGen = 1;
 
 async function resolveLaunchToken() {
   if (_launchToken) {
@@ -62,6 +63,7 @@ export async function requestJson(path, { method = "GET", body = null, signal = 
   const token = await resolveLaunchToken();
   const headers = {
     "X-Finora-Token": token,
+    "X-Finora-Workspace-Gen": String(_workspaceGen),
   };
   const init = {
     method,

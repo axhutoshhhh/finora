@@ -76,6 +76,35 @@ def test_backup_isolation_missing_manifest_and_wal_cleanup(
     backup_service.restore_workspace_backup(data_dir, isolated_db, prim_zip)
     assert not wal.exists()
 
+    # Fault-injection: interrupted os.replace during restore preserves original DB intact
+    transaction_service.create_transaction(
+        isolated_db,
+        {
+            "entry_type": "expense",
+            "account_id": account_service.list_accounts(isolated_db)["accounts"][0]["id"],
+            "category_id": category_service.list_categories(isolated_db, kind="expense")[0]["id"],
+            "amount": "250.00",
+            "tx_date": "2026-10-15",
+            "description": "Pre-fault record",
+        },
+    )
+    import os as _os
+
+    orig_replace = _os.replace
+
+    def _boom_replace(src, dst):
+        raise OSError("Simulated crash during atomic restore")
+
+    _os.replace = _boom_replace
+    try:
+        with pytest.raises(OSError, match="Simulated crash"):
+            backup_service.restore_workspace_backup(data_dir, isolated_db, prim_zip)
+    finally:
+        _os.replace = orig_replace
+
+    # Original DB remains intact and readable after interrupted restore
+    assert transaction_service.list_transactions(isolated_db)["total_count"] == 1
+
 
 @pytest.mark.unit
 def test_recurring_transfer_creates_two_balanced_postings(isolated_db: Path) -> None:
