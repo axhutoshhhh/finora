@@ -37,4 +37,4 @@ Finora is an offline-first, single-user personal finance desktop application for
 - Never fabricate test results, build outputs, or screenshots. Never commit personal financial records, secrets, `.venv/`, `build/`, or `dist/`.
 
 ## 7. Authoritative Documentation
-See `docs/` for specifications: `product-spec.md`, `architecture.md`, `database.md`, `financial-rules.md`, `design-system.md`, `security-model.md`, `api.md`, `test-plan.md`, `acceptance-criteria.md`, `progress.md`, `known-issues.md`, and `docs/decisions/`.
+See `docs/` for specifications: `product-spec.md`, `architecture.md`, `database.md`, `financial-rules.md`, `design-system.md`, `security-model.md`, `api.md`, `test-plan.md`, `feature-verification-matrix.md`, `known-issues.md`, and `docs/decisions/`.

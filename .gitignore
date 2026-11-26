@@ -56,3 +56,6 @@ playwright-report/
 .idea/
 *.swp
 *.swo
+
+# Local-only agent workspace instructions
+GEMINI.md
