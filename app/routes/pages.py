@@ -9,6 +9,13 @@ from app.services import settings_service
 pages_bp = Blueprint("pages", __name__)
 
 
+_VIEW_TITLES = {
+    "overview": "Overview",
+    "transactions": "Transactions",
+    "settings": "Settings",
+}
+
+
 def _render_shell(active_view: str) -> str:
     db_path = current_app.config["FINORA_DB_PATH"]
     appearance = settings_service.get_appearance(db_path)
@@ -16,6 +23,7 @@ def _render_shell(active_view: str) -> str:
     return render_template(
         "app.html",
         active_view=active_view,
+        active_title=_VIEW_TITLES.get(active_view, "Overview"),
         appearance=appearance,
         color_scheme_meta=color_scheme_meta,
         app_version=current_app.config["FINORA_APP_VERSION"],

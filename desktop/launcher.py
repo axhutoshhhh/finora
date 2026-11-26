@@ -8,6 +8,7 @@ import logging
 import secrets
 import signal
 import sys
+import threading
 from contextlib import suppress
 from typing import Any
 
@@ -146,8 +147,11 @@ def launch_desktop() -> int:
         window_holder["main"] = window
 
         def _handle_sigterm(*_args: Any) -> None:
-            with suppress(Exception):
-                window.destroy()
+            def _stop_ui() -> None:
+                with suppress(Exception):
+                    window.destroy()
+
+            threading.Thread(target=_stop_ui, daemon=True).start()
 
         signal.signal(signal.SIGTERM, _handle_sigterm)
 
@@ -167,6 +171,7 @@ def launch_desktop() -> int:
             apply_native_appearance(window, settings_service.get_appearance(db_path))
 
         window.events.loaded += _on_loaded
+        window.events.closing += _cleanup
         window.events.closed += _cleanup
 
         def _on_gui_start() -> None:

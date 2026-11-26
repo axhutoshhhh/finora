@@ -65,10 +65,16 @@ def connect(db_path: Path | str) -> sqlite3.Connection:
 
 
 @contextmanager
-def db_session(db_path: Path | str) -> Iterator[sqlite3.Connection]:
+def db_session(
+    db_path: Path | str,
+    *,
+    immediate: bool = False,
+) -> Iterator[sqlite3.Connection]:
     """Yield a short-lived transactional SQLite connection and guarantee cleanup."""
     conn = connect(db_path)
     try:
+        if immediate:
+            conn.execute("BEGIN IMMEDIATE;")
         with conn:
             yield conn
     except sqlite3.Error as exc:

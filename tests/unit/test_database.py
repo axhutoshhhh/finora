@@ -11,6 +11,7 @@ from app.database import connect, db_session
 from app.migrations.runner import (
     DEFAULT_EXPENSE_CATEGORIES,
     DEFAULT_INCOME_CATEGORIES,
+    apply_migrations,
     initialize_database,
 )
 
@@ -101,5 +102,30 @@ def test_foreign_keys_and_constraints_enforced(isolated_db: Path) -> None:
                 """,
                 (tx_id,),
             )
+    finally:
+        conn.close()
+
+
+@pytest.mark.unit
+def test_ddl_migration_rolls_back_atomically_on_failure(tmp_path: Path) -> None:
+    mig_dir = tmp_path / "broken_migrations"
+    mig_dir.mkdir()
+    (mig_dir / "0001_broken.sql").write_text(
+        """
+        CREATE TABLE partial_table (id INTEGER PRIMARY KEY);
+        INSERT INTO nonexistent_table VALUES (1);
+        """,
+        encoding="utf-8",
+    )
+    db_path = tmp_path / "atomic_test.sqlite3"
+    conn = connect(db_path)
+    try:
+        with pytest.raises(sqlite3.OperationalError):
+            apply_migrations(conn, migrations_dir=mig_dir)
+        # Verify partial_table was rolled back atomically rather than left committed
+        row = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='partial_table';"
+        ).fetchone()
+        assert row is None
     finally:
         conn.close()

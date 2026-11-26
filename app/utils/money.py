@@ -9,8 +9,10 @@ from app.utils.errors import ValidationError
 
 MAX_AMOUNT_MINOR = 99_999_999_999  # ₹99,99,99,999.99 (999,999,999.99 INR in paise)
 
-# Accepts plain digits ("1250", "1250.5", "1250.50") or clean grouped commas ("1,25,000.50", "1,250.00").
-_AMOUNT_PATTERN = re.compile(r"^(?:\d{1,12}|(?:\d{1,3}(?:,\d{2,3})+))(?:\.\d{1,2})?$")
+# Accepts plain digits ("1250", "1250.50"), Western grouping ("1,250.00"), or Indian grouping ("1,25,000.50").
+_AMOUNT_PATTERN = re.compile(
+    r"^(?:\d{1,12}|(?:\d{1,3}(?:,\d{3})+)|(?:\d{1,2}(?:,\d{2})*,\d{3}))(?:\.\d{1,2})?$"
+)
 
 
 def parse_inr_to_minor(raw_value: object, *, field: str = "amount") -> int:

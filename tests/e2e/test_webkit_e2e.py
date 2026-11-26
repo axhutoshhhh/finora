@@ -80,19 +80,9 @@ def _open_webkit_page(
 ):
     browser = playwright_ctx.webkit.launch()
     context = browser.new_context(viewport={"width": width, "height": height})
-    # Simulate pywebview DesktopBridge in-memory token handoff for browser E2E testing only.
-    context.add_init_script(
-        f"""
-        Object.defineProperty(window, 'pywebview', {{
-            value: {{
-                api: {{
-                    get_launch_token: () => Promise.resolve({token!r})
-                }}
-            }},
-            configurable: false
-        }});
-        """
-    )
+    # Simulate the production CSP-safe run_js token handoff (Path 1/3 in api.js)
+    # and confirm no token residue stays on window after consumption.
+    context.add_init_script(f"window.__finoraPendingAuth = {token!r};")
     page = context.new_page()
     app_console_errors: list[str] = []
     page_errors: list[str] = []
@@ -239,9 +229,12 @@ def test_end_to_end_transaction_theme_and_responsive_layout(live_server, tmp_pat
             assert tx_table_overflow is False, "Transactions table overflowed at 900x600"
             _take_shot(page, capture_state, shot_dir / "09_transactions_min_900x600_dark.png")
 
-            # 9. Keyboard Tab navigation reaches focusable control cleanly
+            # 9. Keyboard Tab navigation reaches focusable control cleanly & zero token residue on window
             page.keyboard.press("Tab")
             assert page.evaluate("document.activeElement !== document.body")
+            assert page.evaluate(
+                "typeof window.__finoraPendingAuth === 'undefined' && typeof window.__finoraSetAuth === 'undefined'"
+            )
 
             assert console_errors == [], f"Console errors observed: {console_errors}"
             assert page_errors == [], f"Uncaught page errors observed: {page_errors}"

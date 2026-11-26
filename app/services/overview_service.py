@@ -23,6 +23,7 @@ def get_overview(
     bounded_limit = max(1, min(recent_limit, 25))
 
     with db_session(db_path) as conn:
+        conn.execute("BEGIN DEFERRED;")
         total_balance_minor = accounts_repo.get_total_balance_minor(conn)
         income_minor, expense_minor = transactions_repo.get_month_summary(
             conn,

@@ -4,7 +4,7 @@
 
 import { ApiError, api } from "./api.js";
 
-const AMOUNT_INPUT_RE = /^(?:\d{1,12}|(?:\d{1,3}(?:,\d{2,3})+))(?:\.\d{1,2})?$/;
+const AMOUNT_INPUT_RE = /^(?:\d{1,12}|(?:\d{1,3}(?:,\d{3})+)|(?:\d{1,2}(?:,\d{2})*,\d{3}))(?:\.\d{1,2})?$/;
 
 function localTodayIso() {
   const now = new Date();

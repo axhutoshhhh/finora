@@ -26,7 +26,7 @@ Finora is an offline-first, single-user personal finance desktop application for
 
 ## 5. Security & Privacy Rules
 - Bind WSGI strictly to `127.0.0.1` on an ephemeral port. Disable Flask `debug` in packaged builds.
-- Protect `/api/*` with an ephemeral per-launch secret (`X-Finora-Token`) transferred strictly in memory via `DesktopBridge` (never in URLs, HTML, `localStorage`, logs, or Git).
+- Protect `/api/*` with an ephemeral per-launch secret (`X-Finora-Token`) transferred strictly in memory via origin-checked `WKWebView.run_js` into a private JS closure (never in URLs, HTML, `localStorage`, logs, or Git).
 - Enforce `Host`, `Origin`, `Sec-Fetch-Site`, `Content-Type: application/json`, request size limits, strict CSP (`script-src 'self'`, zero inline scripts/styles), and safe DOM (`textContent` / `createElement`).
 - Store mutable data strictly outside the repo and `.app` bundle (`~/Library/Application Support/Finora/` with `0700`/`0600` permissions; override via `FINORA_DATA_DIR` in dev/test).
 - Do not falsely claim SQLite is encrypted at rest; document reliance on POSIX permissions and macOS FileVault.

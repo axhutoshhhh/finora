@@ -23,14 +23,21 @@ const successBannerText = document.getElementById("global-success-text");
 
 const state = {
   activeView: shellEl?.dataset.initialView || "overview",
+  appearance: shellEl?.dataset.initialAppearance || "system",
   lookups: {
     accounts: [],
     categories: [],
   },
   overviewMonthLabel: "",
+  txLoadedCount: 0,
+  successTimerId: null,
 };
 
 function showErrorBanner(message) {
+  if (state.successTimerId !== null) {
+    window.clearTimeout(state.successTimerId);
+    state.successTimerId = null;
+  }
   successBanner.hidden = true;
   errorBannerText.textContent = message;
   errorBanner.hidden = false;
@@ -38,15 +45,23 @@ function showErrorBanner(message) {
 
 function showSuccessBanner(message) {
   errorBanner.hidden = true;
+  if (state.successTimerId !== null) {
+    window.clearTimeout(state.successTimerId);
+  }
   successBannerText.textContent = message;
   successBanner.hidden = false;
   liveStatusEl.textContent = message;
-  window.setTimeout(() => {
+  state.successTimerId = window.setTimeout(() => {
     successBanner.hidden = true;
+    state.successTimerId = null;
   }, 4000);
 }
 
 function clearBanners() {
+  if (state.successTimerId !== null) {
+    window.clearTimeout(state.successTimerId);
+    state.successTimerId = null;
+  }
   errorBanner.hidden = true;
   successBanner.hidden = true;
 }
@@ -114,9 +129,11 @@ async function refreshAllData() {
   state.lookups.accounts = accountsRes.accounts || [];
   state.lookups.categories = categoriesRes.categories || [];
   state.overviewMonthLabel = overview.month?.label || "";
+  state.appearance = settings.appearance || "system";
+  state.txLoadedCount = (txList.transactions || []).length;
 
   renderOverview(overview);
-  renderTransactionsList(txList);
+  renderTransactionsList(txList, { append: false });
   renderSettings(settings);
   applyColorSchemeMeta(settings.color_scheme_meta);
 
@@ -162,17 +179,39 @@ async function bootstrap() {
     setActiveView(matched ? matched[0] : "overview", { pushHistory: false });
   });
 
+  const loadMoreBtn = document.getElementById("tx-load-more-btn");
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener("click", async () => {
+      loadMoreBtn.disabled = true;
+      try {
+        const nextPage = await api.getTransactions(200, state.txLoadedCount);
+        const batch = nextPage.transactions || [];
+        state.txLoadedCount += batch.length;
+        renderTransactionsList(nextPage, { append: true });
+      } catch (err) {
+        showErrorBanner(err instanceof Error ? err.message : "Failed to load more transactions.");
+      } finally {
+        loadMoreBtn.disabled = false;
+      }
+    });
+  }
+
   // Appearance radio persistence
   for (const radio of document.querySelectorAll('input[name="appearance"]')) {
     radio.addEventListener("change", async () => {
       if (!radio.checked) {
         return;
       }
+      const previous = state.appearance;
       try {
         const res = await api.updateAppearance(radio.value);
+        state.appearance = res.appearance;
         applyColorSchemeMeta(res.color_scheme_meta);
         liveStatusEl.textContent = `Appearance updated to ${res.appearance}.`;
       } catch (err) {
+        for (const candidate of document.querySelectorAll('input[name="appearance"]')) {
+          candidate.checked = candidate.value === previous;
+        }
         showErrorBanner(err instanceof Error ? err.message : "Failed to save appearance.");
       }
     });

@@ -49,7 +49,7 @@ def initial_window_bg_hex(appearance: str) -> str:
 
 
 def apply_native_appearance(window: Any, appearance: str) -> None:
-    """Synchronize NSWindow and NSApplication appearance ('system', 'light', 'dark')."""
+    """Synchronize NSWindow appearance ('system', 'light', 'dark')."""
     if sys.platform != "darwin" or window is None:
         return
     with suppress(Exception):

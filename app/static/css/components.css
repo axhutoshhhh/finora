@@ -204,6 +204,12 @@
   border-radius: var(--radius-lg);
 }
 
+.table-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
 .ledger-table {
   width: 100%;
   border-collapse: separate;

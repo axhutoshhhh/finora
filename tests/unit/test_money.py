@@ -54,6 +54,8 @@ def test_parse_inr_to_minor_valid(raw: object, expected: int) -> None:
         "abc",
         "₹500",
         "10..00",
+        "10,50",
+        "1,23,45",
         "1,2,3",
         "1000000000.00",  # exceeds MAX_AMOUNT_MINOR
         -50,

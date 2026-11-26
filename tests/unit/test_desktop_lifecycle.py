@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from app import create_app
+from desktop.launcher import deliver_launch_token
 from desktop.lifecycle import (
     SingleInstanceGuard,
     StartupError,
@@ -55,3 +56,41 @@ def test_readiness_timeout_raises_startup_error() -> None:
 def test_verify_bundled_assets_succeeds() -> None:
     root = verify_bundled_assets()
     assert (root / "app" / "templates" / "app.html").is_file()
+
+
+@pytest.mark.unit
+def test_deliver_launch_token_enforces_expected_origin() -> None:
+    class _FakeWindow:
+        def __init__(self, url: str) -> None:
+            self._url = url
+            self.scripts: list[str] = []
+
+        def get_current_url(self) -> str:
+            return self._url
+
+        def run_js(self, script: str) -> None:
+            self.scripts.append(script)
+
+    evil = _FakeWindow("https://evil.example/")
+    assert (
+        deliver_launch_token(
+            evil,  # type: ignore[arg-type]
+            token="secret-token",
+            expected_origin="http://127.0.0.1:50000/",
+        )
+        is False
+    )
+    assert evil.scripts == []
+
+    local = _FakeWindow("http://127.0.0.1:50000/transactions")
+    assert (
+        deliver_launch_token(
+            local,  # type: ignore[arg-type]
+            token="secret-token",
+            expected_origin="http://127.0.0.1:50000/",
+        )
+        is True
+    )
+    assert len(local.scripts) == 1
+    assert "__finoraSetAuth" in local.scripts[0]
+    assert "secret-token" in local.scripts[0]

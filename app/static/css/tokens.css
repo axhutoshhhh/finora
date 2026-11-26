@@ -98,10 +98,46 @@
 
 :root:has(> head > meta[name="color-scheme"][content="dark"]) {
   color-scheme: dark;
+  --bg-canvas: var(--raw-canvas-dark);
+  --bg-surface: var(--raw-surface-dark);
+  --bg-sidebar: var(--raw-sidebar-dark);
+  --bg-subtle: var(--raw-subtle-dark);
+  --text-primary: var(--raw-text-primary-dark);
+  --text-secondary: var(--raw-text-secondary-dark);
+  --accent-primary: var(--raw-accent-dark);
+  --accent-hover: var(--raw-accent-hover-dark);
+  --accent-text: var(--raw-accent-text-dark);
+  --accent-tint: var(--raw-accent-tint-dark);
+  --positive: var(--raw-positive-dark);
+  --positive-tint: var(--raw-positive-tint-dark);
+  --negative: var(--raw-negative-dark);
+  --negative-tint: var(--raw-negative-tint-dark);
+  --warning: var(--raw-warning-dark);
+  --border-hairline: var(--raw-border-hairline-dark);
+  --border-control: var(--raw-border-control-dark);
+  --backdrop-scrim: rgba(0, 0, 0, 0.62);
 }
 
 :root:has(> head > meta[name="color-scheme"][content="light"]) {
   color-scheme: light;
+  --bg-canvas: var(--raw-canvas-light);
+  --bg-surface: var(--raw-surface-light);
+  --bg-sidebar: var(--raw-sidebar-light);
+  --bg-subtle: var(--raw-subtle-light);
+  --text-primary: var(--raw-text-primary-light);
+  --text-secondary: var(--raw-text-secondary-light);
+  --accent-primary: var(--raw-accent-light);
+  --accent-hover: var(--raw-accent-hover-light);
+  --accent-text: var(--raw-accent-text-light);
+  --accent-tint: var(--raw-accent-tint-light);
+  --positive: var(--raw-positive-light);
+  --positive-tint: var(--raw-positive-tint-light);
+  --negative: var(--raw-negative-light);
+  --negative-tint: var(--raw-negative-tint-light);
+  --warning: var(--raw-warning-light);
+  --border-hairline: var(--raw-border-hairline-light);
+  --border-control: var(--raw-border-control-light);
+  --backdrop-scrim: rgba(16, 19, 17, 0.42);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -113,14 +113,17 @@ def create_transaction(
 
     signed_amount_minor = -amount_minor if entry_type == "expense" else amount_minor
 
-    with db_session(db_path) as conn:
+    with db_session(db_path, immediate=True) as conn:
         if idempotency_key is not None:
             existing = transactions_repo.get_transaction_by_idempotency_key(conn, idempotency_key)
             if existing is not None:
+                existing_cat_id = (
+                    int(existing["category_id"]) if existing["category_id"] is not None else None
+                )
                 matches = (
                     existing["entry_type"] == entry_type
                     and int(existing["account_id"]) == account_id
-                    and int(existing["category_id"]) == category_id
+                    and existing_cat_id == category_id
                     and int(existing["signed_amount_minor"]) == signed_amount_minor
                     and str(existing["tx_date"]) == tx_date
                     and str(existing["description"]) == description

@@ -78,35 +78,47 @@ def _discover_migrations(migrations_dir: Path) -> list[tuple[int, str, Path]]:
 
 
 def apply_migrations(conn: sqlite3.Connection, migrations_dir: Path | None = None) -> list[int]:
-    """Apply all pending SQL migrations atomically inside the caller's transaction."""
+    """Apply all pending SQL migrations atomically inside an explicit SQLite transaction."""
     sql_dir = migrations_dir or default_migrations_dir()
     migrations = _discover_migrations(sql_dir)
 
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS schema_migrations (
-            version INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            applied_at TEXT NOT NULL
-        );
-        """
-    )
-    applied_rows = conn.execute("SELECT version FROM schema_migrations;").fetchall()
-    applied_versions = {int(row["version"]) for row in applied_rows}
+    started_txn = False
+    if not conn.in_transaction:
+        conn.execute("BEGIN IMMEDIATE;")
+        started_txn = True
 
-    newly_applied: list[int] = []
-    for version, name, sql_path in migrations:
-        if version in applied_versions:
-            continue
-        sql_text = sql_path.read_text(encoding="utf-8")
-        for stmt in _split_sql_statements(sql_text):
-            conn.execute(stmt)
+    try:
         conn.execute(
-            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?);",
-            (version, name, utc_now_iso()),
+            """
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                version INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                applied_at TEXT NOT NULL
+            );
+            """
         )
-        newly_applied.append(version)
-    return newly_applied
+        applied_rows = conn.execute("SELECT version FROM schema_migrations;").fetchall()
+        applied_versions = {int(row["version"]) for row in applied_rows}
+
+        newly_applied: list[int] = []
+        for version, name, sql_path in migrations:
+            if version in applied_versions:
+                continue
+            sql_text = sql_path.read_text(encoding="utf-8")
+            for stmt in _split_sql_statements(sql_text):
+                conn.execute(stmt)
+            conn.execute(
+                "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?);",
+                (version, name, utc_now_iso()),
+            )
+            newly_applied.append(version)
+        if started_txn:
+            conn.commit()
+        return newly_applied
+    except Exception:
+        if started_txn and conn.in_transaction:
+            conn.rollback()
+        raise
 
 
 def seed_defaults(conn: sqlite3.Connection) -> None:

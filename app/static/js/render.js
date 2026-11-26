@@ -34,13 +34,16 @@ function makeIcon(name, extraClass = "") {
   return span;
 }
 
-function makeCell(text, { className = "", dataLabel = "" } = {}) {
+function makeCell(text, { className = "", dataLabel = "", tooltip = "" } = {}) {
   const td = document.createElement("td");
   if (className) {
     td.className = className;
   }
   if (dataLabel) {
     td.setAttribute("data-label", dataLabel);
+  }
+  if (tooltip) {
+    td.title = tooltip;
   }
   td.textContent = text;
   return td;
@@ -146,7 +149,11 @@ export function renderOverview(overviewData) {
     tr.append(
       makeCell(tx.tx_date, { className: "col-date tabular-nums", dataLabel: "Date" }),
       makeCategoryCell(tx),
-      makeCell(tx.description || "—", { className: "col-desc", dataLabel: "Description" }),
+      makeCell(tx.description || "—", {
+        className: "col-desc",
+        dataLabel: "Description",
+        tooltip: tx.description || "",
+      }),
       makeCell(tx.account_name, { className: "col-account", dataLabel: "Account" }),
       makeAmountCell(tx)
     );
@@ -155,20 +162,26 @@ export function renderOverview(overviewData) {
   tbody.appendChild(frag);
 }
 
-export function renderTransactionsList(txData) {
+export function renderTransactionsList(txData, { append = false } = {}) {
   const countEl = document.getElementById("tx-history-count");
   const emptyBox = document.getElementById("tx-empty");
   const tableWrap = document.getElementById("tx-table-wrap");
   const tbody = document.getElementById("tx-history-body");
+  const loadMoreWrap = document.getElementById("tx-load-more-wrap");
 
   const items = txData.transactions || [];
   const total = txData.total_count ?? items.length;
   countEl.textContent = total === 1 ? "1 entry" : `${total} entries`;
 
-  tbody.replaceChildren();
-  if (items.length === 0) {
+  if (!append) {
+    tbody.replaceChildren();
+  }
+  if (!append && items.length === 0) {
     emptyBox.hidden = false;
     tableWrap.hidden = true;
+    if (loadMoreWrap) {
+      loadMoreWrap.hidden = true;
+    }
     return;
   }
 
@@ -181,7 +194,11 @@ export function renderTransactionsList(txData) {
     tr.append(
       makeCell(tx.tx_date, { className: "col-date tabular-nums", dataLabel: "Date" }),
       makeCategoryCell(tx),
-      makeCell(tx.description || "—", { className: "col-desc", dataLabel: "Description" }),
+      makeCell(tx.description || "—", {
+        className: "col-desc",
+        dataLabel: "Description",
+        tooltip: tx.description || "",
+      }),
       makeTypeCell(tx),
       makeCell(tx.account_name, { className: "col-account", dataLabel: "Account" }),
       makeAmountCell(tx)
@@ -189,6 +206,10 @@ export function renderTransactionsList(txData) {
     frag.appendChild(tr);
   }
   tbody.appendChild(frag);
+
+  if (loadMoreWrap) {
+    loadMoreWrap.hidden = tbody.rows.length >= total;
+  }
 }
 
 export function renderSettings(settingsData) {
