@@ -920,3 +920,41 @@ def restore_backup() -> tuple[Response, int]:
             "Backup path must reside inside the Finora backups folder.", field="backup_path"
         )
     return jsonify(backup_service.restore_workspace_backup(data_dir, db_path, bpath)), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: Isolated Demo Workspace
+# ---------------------------------------------------------------------------
+
+
+@api_bp.get("/workspaces")
+def get_workspace_status() -> tuple[Response, int]:
+    active = str(current_app.config.get("FINORA_ACTIVE_WORKSPACE") or "primary")
+    return jsonify({"active_workspace": active}), 200
+
+
+@api_bp.post("/workspaces/switch")
+def switch_workspace() -> tuple[Response, int]:
+    from pathlib import Path
+
+    from app.services import workspace_service
+
+    payload = _parse_json_object()
+    target = str(payload.get("workspace") or "")
+    data_dir = Path(current_app.config["FINORA_DATA_DIR"])
+    _, target_db = workspace_service.get_workspace_paths(data_dir, workspace=target)
+    if target == "demo":
+        workspace_service.seed_demo_workspace(target_db)
+    current_app.config["FINORA_DB_PATH"] = target_db
+    current_app.config["FINORA_ACTIVE_WORKSPACE"] = target
+    return jsonify({"active_workspace": target}), 200
+
+
+@api_bp.post("/workspaces/demo/reset")
+def reset_demo_workspace() -> tuple[Response, int]:
+    from pathlib import Path
+
+    from app.services import workspace_service
+
+    data_dir = Path(current_app.config["FINORA_DATA_DIR"])
+    return jsonify(workspace_service.reset_demo_workspace(data_dir)), 200
