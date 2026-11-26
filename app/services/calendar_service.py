@@ -27,8 +27,9 @@ def get_month_calendar(db_path: Path | str, *, month: str) -> dict[str, Any]:
             """
             SELECT
                 t.id, t.entry_type, t.tx_date, t.description, t.merchant,
-                COALESCE(SUM(CASE WHEN t.entry_type = 'transfer' THEN ABS(p.signed_amount_minor) / 2
-                                  ELSE ABS(p.signed_amount_minor) END), 0) AS amount_minor
+                COALESCE(SUM(CASE WHEN t.entry_type = 'transfer' THEN ABS(p.signed_amount_minor)
+                                  ELSE ABS(p.signed_amount_minor) END), 0) AS raw_amount_minor,
+                t.entry_type AS etype
             FROM transactions t
             JOIN postings p ON p.transaction_id = t.id
             WHERE t.deleted_at IS NULL AND t.tx_date >= ? AND t.tx_date <= ?
@@ -77,7 +78,8 @@ def get_month_calendar(db_path: Path | str, *, month: str) -> dict[str, Any]:
     for r in tx_rows:
         iso = str(r["tx_date"])
         if iso in days:
-            amt = int(r["amount_minor"])
+            raw_amt = int(r["raw_amount_minor"])
+            amt = raw_amt // 2 if r["etype"] == "transfer" else raw_amt
             days[iso]["posted_count"] += 1
             days[iso]["posted"].append(
                 {

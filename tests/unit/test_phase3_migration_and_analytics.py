@@ -22,7 +22,7 @@ def test_phase3_schema_tables_present_and_integrity_ok(isolated_db: Path) -> Non
         for r in conn.execute("SELECT version FROM schema_migrations ORDER BY version;").fetchall()
     ]
     conn.close()
-    assert versions == [1, 2, 3]
+    assert versions == [1, 2, 3, 4]
     for expected in (
         "savings_goals",
         "goal_allocations",

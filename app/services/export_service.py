@@ -13,7 +13,8 @@ _FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
 def sanitize_csv_cell(value: str) -> str:
     """Neutralize spreadsheet formula injection while preserving text readability."""
-    if value and value[0] in _FORMULA_PREFIXES:
+    stripped = value.lstrip()
+    if stripped and stripped[0] in _FORMULA_PREFIXES:
         return "'" + value
     return value
 

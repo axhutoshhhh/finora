@@ -58,7 +58,7 @@ export class ApiError extends Error {
   }
 }
 
-async function requestJson(path, { method = "GET", body = null, signal = null } = {}) {
+export async function requestJson(path, { method = "GET", body = null, signal = null } = {}) {
   const token = await resolveLaunchToken();
   const headers = {
     "X-Finora-Token": token,

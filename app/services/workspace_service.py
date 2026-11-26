@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import threading
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,8 @@ from app.services import (
 )
 from app.utils.errors import ValidationError
 
+_WORKSPACE_LOCK = threading.RLock()
+
 
 def get_workspace_paths(data_dir: Path, *, workspace: str) -> tuple[Path, Path]:
     """Return (workspace_dir, db_path) for 'primary' or 'demo'."""
@@ -36,6 +39,11 @@ def get_workspace_paths(data_dir: Path, *, workspace: str) -> tuple[Path, Path]:
 
 def seed_demo_workspace(demo_db: Path, *, today: date | None = None) -> None:
     """Populate an isolated demo database with ~240 realistic synthetic records."""
+    with _WORKSPACE_LOCK:
+        _seed_demo_workspace_locked(demo_db, today=today)
+
+
+def _seed_demo_workspace_locked(demo_db: Path, *, today: date | None = None) -> None:
     ref = today or date.today()
     initialize_database(demo_db)
 
@@ -172,9 +180,10 @@ def seed_demo_workspace(demo_db: Path, *, today: date | None = None) -> None:
 
 
 def reset_demo_workspace(data_dir: Path) -> dict[str, Any]:
-    demo_dir = data_dir / "workspaces" / "demo"
-    if demo_dir.exists():
-        shutil.rmtree(demo_dir)
-    _, demo_db = get_workspace_paths(data_dir, workspace="demo")
-    seed_demo_workspace(demo_db)
-    return {"reset": True, "workspace": "demo"}
+    with _WORKSPACE_LOCK:
+        demo_dir = data_dir / "workspaces" / "demo"
+        if demo_dir.exists():
+            shutil.rmtree(demo_dir)
+        _, demo_db = get_workspace_paths(data_dir, workspace="demo")
+        seed_demo_workspace(demo_db)
+        return {"reset": True, "workspace": "demo"}

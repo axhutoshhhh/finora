@@ -47,7 +47,7 @@ def create_workspace_backup(
             src.close()
 
         files_manifest: dict[str, str] = {"finance.sqlite3": _sha256_file(tmp_db)}
-        att_dir = data_dir / "attachments"
+        att_dir = db_path.parent / "attachments"
         att_files: list[tuple[Path, str]] = []
         if att_dir.exists():
             for f in sorted(att_dir.iterdir()):
@@ -102,6 +102,8 @@ def restore_workspace_backup(data_dir: Path, db_path: Path, backup_zip: Path) ->
         if int(manifest.get("format_version") or 0) > BACKUP_FORMAT_VERSION:
             raise ValidationError("Unsupported future backup format version.")
         expected_files: dict[str, str] = manifest.get("files") or {}
+        if "finance.sqlite3" not in expected_files:
+            raise ValidationError("Backup manifest is missing finance.sqlite3 checksum.")
 
         with tempfile.TemporaryDirectory() as td:
             stage = Path(td) / "stage"
@@ -128,10 +130,15 @@ def restore_workspace_backup(data_dir: Path, db_path: Path, backup_zip: Path) ->
             if db_path.exists():
                 create_workspace_backup(data_dir, db_path)
 
+            for suffix in ("-wal", "-shm"):
+                sidecar = db_path.with_name(db_path.name + suffix)
+                if sidecar.exists():
+                    sidecar.unlink()
+
             shutil.copy2(staged_db, db_path)
             os.chmod(db_path, 0o600)
             att_stage = stage / "attachments"
-            att_target = data_dir / "attachments"
+            att_target = db_path.parent / "attachments"
             att_target.mkdir(parents=True, exist_ok=True)
             if att_stage.exists():
                 for f in att_stage.iterdir():

@@ -150,7 +150,7 @@ def evaluate_advisories(
                     nav_target="budgets",
                     now=now,
                 )
-            else:
+            elif pct < 100:
                 thresh = int(prefs["budget_approaching"].get("threshold_value") or 80)
                 if pct >= thresh and prefs["budget_approaching"]["enabled"]:
                     rem = eff - spent

@@ -55,6 +55,16 @@ def _enforce_api_security() -> tuple[Response, int] | None:
     if not provided_token or not hmac.compare_digest(provided_token, expected_token):
         return _reject("unauthorized", "Valid launch authorization token required.", 401)
 
+    req_ws_gen = request.headers.get("X-Finora-Workspace-Gen")
+    if req_ws_gen is not None and req_ws_gen != str(
+        current_app.config.get("FINORA_WORKSPACE_GEN", 1)
+    ):
+        return _reject(
+            "workspace_changed",
+            "Active workspace changed; please refresh before retrying.",
+            409,
+        )
+
     if request.endpoint != _ATTACHMENT_UPLOAD_ENDPOINT:
         content_len = request.content_length
         if content_len is not None and content_len > MAX_CONTENT_LENGTH_BYTES:
@@ -947,7 +957,9 @@ def switch_workspace() -> tuple[Response, int]:
         workspace_service.seed_demo_workspace(target_db)
     current_app.config["FINORA_DB_PATH"] = target_db
     current_app.config["FINORA_ACTIVE_WORKSPACE"] = target
-    return jsonify({"active_workspace": target}), 200
+    next_gen = int(current_app.config.get("FINORA_WORKSPACE_GEN", 1)) + 1
+    current_app.config["FINORA_WORKSPACE_GEN"] = next_gen
+    return jsonify({"active_workspace": target, "workspace_gen": next_gen}), 200
 
 
 @api_bp.post("/workspaces/demo/reset")

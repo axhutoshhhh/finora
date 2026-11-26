@@ -83,6 +83,7 @@ def create_app(
         FINORA_API_TOKEN=settings.api_token,
         FINORA_ALLOWED_HOSTS=settings.allowed_hosts,
         FINORA_ALLOWED_ORIGINS=settings.allowed_origins,
+        FINORA_WORKSPACE_GEN=1,
     )
 
     if appearance_callback is not None:

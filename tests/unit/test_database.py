@@ -20,7 +20,7 @@ from app.migrations.runner import (
 def test_initial_schema_seeding_and_idempotency(tmp_path: Path) -> None:
     db_path = tmp_path / "unicode folder ₹" / "finance.sqlite3"
     applied_first = initialize_database(db_path)
-    assert applied_first == [1, 2, 3]
+    assert applied_first == [1, 2, 3, 4]
 
     # Repeated initialization must be completely idempotent
     applied_second = initialize_database(db_path)
@@ -34,6 +34,7 @@ def test_initial_schema_seeding_and_idempotency(tmp_path: Path) -> None:
             (1, "initial_schema"),
             (2, "phase2_core_financials"),
             (3, "phase3_intelligence"),
+            (4, "phase4_indexes"),
         ]
 
         expense_cats = conn.execute(
@@ -182,11 +183,11 @@ def test_phase1_to_phase2_migration_preserves_data_and_creates_backup(tmp_path: 
             (exp_id,),
         )
 
-    # Upgrade to Phase 2 + Phase 3 migrations
-    assert initialize_database(db_path) == [2, 3]
+    # Upgrade to Phase 2 + Phase 3 + Phase 4 migrations
+    assert initialize_database(db_path) == [2, 3, 4]
 
     backups_dir = db_path.parent / "backups"
-    backups = list(backups_dir.glob("pre_migration_v1_to_v3_*.sqlite3"))
+    backups = list(backups_dir.glob("pre_migration_v1_to_v4_*.sqlite3"))
     assert len(backups) == 1
     assert (backups[0].stat().st_mode & 0o777) == 0o600
 

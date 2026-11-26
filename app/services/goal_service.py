@@ -205,8 +205,8 @@ def add_contribution(
         g_row = conn.execute("SELECT * FROM savings_goals WHERE id = ?;", (goal_id,)).fetchone()
         if g_row is None:
             raise NotFoundError("Savings goal not found.", field="goal_id")
-        if g_row["status"] == "archived":
-            raise ConflictError("Cannot modify contributions on an archived goal.")
+        if g_row["status"] in ("archived", "completed"):
+            raise ConflictError("Cannot modify contributions on an archived or completed goal.")
         cur_alloc = int(
             conn.execute(
                 "SELECT COALESCE(SUM(signed_amount_minor), 0) FROM goal_allocations WHERE goal_id = ?;",

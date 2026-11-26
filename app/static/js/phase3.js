@@ -1,27 +1,15 @@
 /* Phase 3 Frontend Integration: Reports (Chart.js), Goals, Recurring, Calendar, Insights & Demo Badge */
-(function () {
-  "use strict";
+import { requestJson as apiFetch } from "./api.js";
 
-  const charts = {};
-  let calMonth = new Date().toISOString().slice(0, 7);
+const charts = {};
+let calMonth = new Date().toISOString().slice(0, 7);
 
-  function el(tag, cls, text) {
-    const node = document.createElement(tag);
-    if (cls) node.className = cls;
-    if (text !== undefined && text !== null) node.textContent = String(text);
-    return node;
-  }
-
-  async function apiFetch(path, opts) {
-    const token = window.__finoraToken || window.__finoraPendingAuth || "";
-    const headers = Object.assign(
-      { "X-Finora-Token": token },
-      opts && opts.body ? { "Content-Type": "application/json" } : {}
-    );
-    const res = await fetch(path, Object.assign({ headers }, opts || {}));
-    if (!res.ok) throw new Error("API error " + res.status);
-    return res.json();
-  }
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
 
   function destroyChart(key) {
     if (charts[key]) {
@@ -234,5 +222,20 @@
         loadCalendar();
       });
     }
+
+    // Auto-load if directly navigated to a Phase 3 view
+    const activeMap = [
+      ["view-reports", loadReports],
+      ["view-goals", loadGoals],
+      ["view-recurring", loadRecurring],
+      ["view-calendar", loadCalendar],
+      ["view-insights", loadInsights],
+    ];
+    for (const [id, fn] of activeMap) {
+      const sec = document.getElementById(id);
+      if (sec && !sec.hidden) {
+        fn();
+        break;
+      }
+    }
   });
-})();
