@@ -1,0 +1,53 @@
+{
+  "backend_10k": {
+    "overview_load": {
+      "median_ms": 30.89,
+      "p95_ms": 40.09,
+      "max_ms": 48.01,
+      "iterations": 12,
+      "timed_out": false
+    },
+    "tx_amount_desc": {
+      "median_ms": 11.12,
+      "p95_ms": 11.85,
+      "max_ms": 12.12,
+      "iterations": 12,
+      "timed_out": false
+    },
+    "analytics_report": {
+      "median_ms": 66.64,
+      "p95_ms": 67.5,
+      "max_ms": 67.78,
+      "iterations": 12,
+      "timed_out": false
+    }
+  },
+  "backend_100k": {
+    "overview_load": {
+      "median_ms": 694.04,
+      "p95_ms": 910.45,
+      "max_ms": 910.45,
+      "iterations": 5,
+      "timed_out": false
+    },
+    "tx_amount_desc": {
+      "median_ms": 102.22,
+      "p95_ms": 169.87,
+      "max_ms": 169.87,
+      "iterations": 5,
+      "timed_out": false
+    }
+  },
+  "ui_10k": {
+    "overview_ui_ms": {
+      "median_ms": 230.68,
+      "p95_ms": 12391.58,
+      "max_ms": 12391.58
+    },
+    "transactions_ui_ms": {
+      "median_ms": 168.96,
+      "p95_ms": 282.08,
+      "max_ms": 282.08
+    }
+  }
+}
