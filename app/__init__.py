@@ -9,7 +9,12 @@ from typing import Any
 
 from flask import Flask, Response, jsonify, request
 
-from app.config import APP_VERSION, MAX_CONTENT_LENGTH_BYTES, FinoraSettings, get_bundle_root
+from app.config import (
+    APP_VERSION,
+    MAX_ATTACHMENT_HTTP_BYTES,
+    FinoraSettings,
+    get_bundle_root,
+)
 from app.migrations.runner import initialize_database
 from app.routes.api import api_bp
 from app.routes.health import health_bp
@@ -71,7 +76,7 @@ def create_app(
         TESTING=settings.testing,
         DEBUG=False,
         PROPAGATE_EXCEPTIONS=False,
-        MAX_CONTENT_LENGTH=MAX_CONTENT_LENGTH_BYTES,
+        MAX_CONTENT_LENGTH=MAX_ATTACHMENT_HTTP_BYTES,
         FINORA_APP_VERSION=APP_VERSION,
         FINORA_DATA_DIR=settings.data_dir,
         FINORA_DB_PATH=settings.db_path,
@@ -103,7 +108,7 @@ def create_app(
 
     @app.after_request
     def _apply_security_headers(response: Response) -> Response:
-        response.headers["Content-Security-Policy"] = CSP_POLICY
+        response.headers.setdefault("Content-Security-Policy", CSP_POLICY)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"

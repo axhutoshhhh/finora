@@ -13,7 +13,8 @@ APP_VERSION = "0.1.0"
 BUNDLE_IDENTIFIER = "app.finora.desktop"
 DEFAULT_DATA_DIR_NAME = "Finora"
 DB_FILENAME = "finance.sqlite3"
-MAX_CONTENT_LENGTH_BYTES = 64 * 1024  # 64 KiB
+MAX_CONTENT_LENGTH_BYTES = 64 * 1024  # 64 KiB for JSON endpoints
+MAX_ATTACHMENT_HTTP_BYTES = 5 * 1024 * 1024 + 64 * 1024  # 5 MiB file + multipart overhead
 
 
 def get_bundle_root() -> Path:
