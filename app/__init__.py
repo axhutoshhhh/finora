@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -84,7 +85,9 @@ def create_app(
         FINORA_ALLOWED_HOSTS=settings.allowed_hosts,
         FINORA_ALLOWED_ORIGINS=settings.allowed_origins,
         FINORA_WORKSPACE_GEN=1,
+        FINORA_ACTIVE_WORKSPACE="primary",
     )
+    app.extensions["finora_workspace_lock"] = threading.RLock()
 
     if appearance_callback is not None:
         app.extensions["finora_appearance_callback"] = appearance_callback

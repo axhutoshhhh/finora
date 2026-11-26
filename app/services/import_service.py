@@ -14,7 +14,7 @@ from app.repositories import accounts_repo, categories_repo, transactions_repo
 from app.services import categorization_service
 from app.utils.errors import ConflictError, NotFoundError, ValidationError
 from app.utils.money import format_inr_minor, parse_inr_to_minor
-from app.utils.time import utc_now_iso
+from app.utils.time import utc_now_iso, validate_tx_date
 
 MAX_CSV_BYTES = 2 * 1024 * 1024
 MAX_CSV_ROWS = 5_000
@@ -188,6 +188,9 @@ def commit_csv_import(
 ) -> dict[str, Any]:
     """Atomically commit reviewed valid CSV rows with idempotency protection."""
     now = utc_now_iso()
+    if not batch_uuid or not batch_uuid.strip():
+        raise ValidationError("Import batch_uuid is required.", field="batch_uuid")
+    seen_rows: set[int] = set()
     with db_session(db_path, immediate=True) as conn:
         existing = conn.execute(
             "SELECT * FROM import_batches WHERE batch_uuid = ?;", (batch_uuid,)
@@ -239,11 +242,15 @@ def commit_csv_import(
             cat = categories_repo.get_category_by_id(conn, cat_id)
             if cat is None or int(cat["is_archived"]) == 1 or str(cat["kind"]) != etype:
                 raise ValidationError("Invalid category for imported row.", field="category_id")
+            if rnum <= 0 or rnum in seen_rows:
+                raise ValidationError("Invalid or duplicate import row_number.", field="rows")
+            seen_rows.add(rnum)
+            tx_date_iso = validate_tx_date(item.get("tx_date"), field="tx_date", allow_future=False)
             signed = amt_minor if etype == "income" else -amt_minor
             tx_id = transactions_repo.create_multi_posting_transaction(
                 conn,
                 entry_type=etype,
-                tx_date=str(item["tx_date"]),
+                tx_date=tx_date_iso,
                 description=str(item.get("description") or "")[:240],
                 merchant=str(item.get("merchant") or "")[:120],
                 payment_method="other",

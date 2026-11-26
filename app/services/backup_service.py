@@ -8,6 +8,7 @@ import os
 import shutil
 import sqlite3
 import tempfile
+import uuid
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -31,10 +32,12 @@ def create_workspace_backup(
     data_dir: Path, db_path: Path, *, dest_zip: Path | None = None
 ) -> dict[str, Any]:
     """Create a coherent SQLite + attachments ZIP backup with SHA-256 manifest."""
-    backups_dir = data_dir / "backups"
+    ws_name = "demo" if ("workspaces" in db_path.parts and "demo" in db_path.parts) else "primary"
+    backups_dir = data_dir / "backups" / ws_name
     backups_dir.mkdir(parents=True, exist_ok=True)
     os.chmod(backups_dir, 0o700)
-    target_zip = dest_zip or (backups_dir / f"finora-backup-{utc_now_iso().replace(':', '-')}.zip")
+    stamp = utc_now_iso().replace(":", "-")
+    target_zip = dest_zip or (backups_dir / f"finora-backup-{stamp}-{uuid.uuid4().hex[:6]}.zip")
 
     with tempfile.TemporaryDirectory() as td:
         tmp_db = Path(td) / "finance.sqlite3"
@@ -58,6 +61,7 @@ def create_workspace_backup(
 
         manifest = {
             "format_version": BACKUP_FORMAT_VERSION,
+            "workspace": ws_name,
             "created_at": utc_now_iso(),
             "files": files_manifest,
         }
@@ -99,8 +103,18 @@ def restore_workspace_backup(data_dir: Path, db_path: Path, backup_zip: Path) ->
             raise ValidationError("Backup archive is missing required manifest or database.")
 
         manifest = json.loads(zf.read("manifest.json").decode("utf-8"))
+        if not isinstance(manifest, dict):
+            raise ValidationError("Invalid backup manifest structure.")
         if int(manifest.get("format_version") or 0) > BACKUP_FORMAT_VERSION:
             raise ValidationError("Unsupported future backup format version.")
+        expected_ws = (
+            "demo" if ("workspaces" in db_path.parts and "demo" in db_path.parts) else "primary"
+        )
+        manifest_ws = manifest.get("workspace")
+        if manifest_ws is not None and manifest_ws != expected_ws:
+            raise ValidationError(
+                f"Backup belongs to '{manifest_ws}' workspace, not '{expected_ws}'."
+            )
         expected_files: dict[str, str] = manifest.get("files") or {}
         if "finance.sqlite3" not in expected_files:
             raise ValidationError("Backup manifest is missing finance.sqlite3 checksum.")
@@ -135,14 +149,21 @@ def restore_workspace_backup(data_dir: Path, db_path: Path, backup_zip: Path) ->
                 if sidecar.exists():
                     sidecar.unlink()
 
-            shutil.copy2(staged_db, db_path)
-            os.chmod(db_path, 0o600)
+            # Atomic replacement on same filesystem
+            tmp_replace = db_path.parent / f".restore-{uuid.uuid4().hex}.sqlite3"
+            shutil.copy2(staged_db, tmp_replace)
+            os.chmod(tmp_replace, 0o600)
+            os.replace(tmp_replace, db_path)
+
             att_stage = stage / "attachments"
             att_target = db_path.parent / "attachments"
+            if att_target.exists():
+                shutil.rmtree(att_target)
             att_target.mkdir(parents=True, exist_ok=True)
+            os.chmod(att_target, 0o700)
             if att_stage.exists():
                 for f in att_stage.iterdir():
-                    if f.is_file():
+                    if f.is_file() and not f.is_symlink():
                         dest = att_target / f.name
                         shutil.copy2(f, dest)
                         os.chmod(dest, 0o600)

@@ -1221,6 +1221,14 @@ def bulk_action(db_path: Path | str, payload: dict[str, Any]) -> dict[str, Any]:
                         f"Category '{cat['name']}' ({cat_kind}) does not match {etype} transaction #{tid}.",
                         status_code=422,
                     )
+                if (
+                    etype == "expense"
+                    and int(grouped_rows[tid][0]["category_id"] or 0) != cat_id
+                    and transactions_repo.list_active_refund_rows_for_parent(conn, tid)
+                ):
+                    raise ConflictError(
+                        f"Transaction #{tid} has active linked refunds; bulk category update aborted."
+                    )
             transactions_repo.update_single_posting_category_bulk(
                 conn, transaction_ids=tx_ids, category_id=cat_id, now=now
             )

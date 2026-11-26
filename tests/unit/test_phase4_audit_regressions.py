@@ -176,7 +176,7 @@ def test_calendar_odd_paise_transfer_and_completed_goal_and_advisory_guards(
     )
     notes = advisory_service.evaluate_advisories(isolated_db, month="2026-11")
     assert not any(n["rule_id"] in ("budget_exceeded", "budget_approaching") for n in notes)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         advisory_service.update_notification_preferences(
             isolated_db, [{"rule_id": "budget_approaching", "threshold_value": "bad"}]
         )

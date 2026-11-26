@@ -25,7 +25,7 @@ def test_scenario_i_and_j_csv_preview_commit_idempotency_and_possible_dup(
     cash_id = account_service.list_accounts(isolated_db)["accounts"][0]["id"]
     rows_csv = ["date,description,merchant,amount,entry_type"]
     for i in range(100):
-        rows_csv.append(f"2026-11-{(i % 28) + 1:02d},Purchase {i},Shop {i},{100 + i}.00,expense")
+        rows_csv.append(f"2026-10-{(i % 28) + 1:02d},Purchase {i},Shop {i},{100 + i}.00,expense")
     csv_bytes = "\n".join(rows_csv).encode("utf-8")
 
     # Preview must create 0 transactions
@@ -56,7 +56,7 @@ def test_scenario_i_and_j_csv_preview_commit_idempotency_and_possible_dup(
     assert transaction_service.list_transactions(isolated_db)["total_count"] == 100
 
     # Scenario J: same amount & date with different description -> possible_duplicate (reviewable, not dropped)
-    csv2 = b"date,description,merchant,amount,entry_type\n2026-11-01,Second coffee,Cafe,100.00,expense\n"
+    csv2 = b"date,description,merchant,amount,entry_type\n2026-10-01,Second coffee,Cafe,100.00,expense\n"
     prev2 = import_service.preview_csv_import(
         isolated_db, csv_bytes=csv2, account_id=cash_id, mapping={}
     )

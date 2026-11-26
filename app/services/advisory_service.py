@@ -9,7 +9,7 @@ from typing import Any
 
 from app.database import db_session
 from app.services import account_service, analytics_service, budget_service, forecasting_service
-from app.utils.errors import NotFoundError
+from app.utils.errors import NotFoundError, ValidationError
 from app.utils.money import format_inr_minor
 from app.utils.time import utc_now_iso
 
@@ -186,7 +186,7 @@ def evaluate_advisories(
             aid = int(a["id"])
             if a["account_type"] == "credit_card":
                 limit_m = a.get("credit_limit_minor")
-                owed_m = int(a.get("amount_owed_minor") or 0)
+                owed_m = int(a.get("outstanding_liability_minor") or 0)
                 if (
                     limit_m
                     and limit_m > 0
@@ -381,7 +381,10 @@ def update_notification_preferences(
             if thresh is not None and (
                 isinstance(thresh, bool) or not isinstance(thresh, int) or thresh < 0
             ):
-                raise ValueError("threshold_value must be a non-negative integer or null.")
+                raise ValidationError(
+                    "threshold_value must be a non-negative integer or null.",
+                    field="threshold_value",
+                )
             conn.execute(
                 """
                 INSERT INTO notification_preferences (rule_id, enabled, threshold_value, native_enabled, updated_at)
