@@ -115,3 +115,18 @@ def test_api_rejects_non_json_and_oversized_payloads(secured_client) -> None:
         headers={"Host": "127.0.0.1", "X-Finora-Token": token},
     )
     assert resp_size.status_code == 413
+
+    # Chunked / unknown Content-Length body exceeding 64 KiB must also return 413
+    import io
+
+    resp_chunked = client.post(
+        "/api/transactions",
+        input_stream=io.BytesIO(huge_body.encode("utf-8")),
+        content_type="application/json",
+        headers={
+            "Host": "127.0.0.1",
+            "X-Finora-Token": token,
+        },
+        environ_base={"CONTENT_LENGTH": ""},
+    )
+    assert resp_chunked.status_code == 413

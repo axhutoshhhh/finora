@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 APP_NAME = "Finora"
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.2.0"
 BUNDLE_IDENTIFIER = "app.finora.desktop"
 DEFAULT_DATA_DIR_NAME = "Finora"
 DB_FILENAME = "finance.sqlite3"

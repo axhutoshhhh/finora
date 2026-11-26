@@ -337,8 +337,19 @@ def update_account(
         if color_token not in VALID_COLOR_TOKENS:
             raise ValidationError("Invalid account color.", field="color_token")
 
-        if "opening_balance" in payload or "opening_balance_direction" in payload:
+        if "opening_balance" in payload:
             opening_balance_minor = _parse_opening_balance_minor(payload, account_type=next_type)
+        elif "opening_balance_direction" in payload and next_type == "credit_card":
+            direction = payload.get("opening_balance_direction")
+            if direction not in ("debt", "credit"):
+                raise ValidationError(
+                    "Credit card opening balance direction must be 'debt' or 'credit'.",
+                    field="opening_balance_direction",
+                )
+            abs_existing = abs(int(existing["opening_balance_minor"]))
+            opening_balance_minor = (
+                -abs_existing if direction == "debt" and abs_existing > 0 else abs_existing
+            )
         else:
             opening_balance_minor = int(existing["opening_balance_minor"])
 

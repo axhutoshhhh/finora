@@ -30,7 +30,7 @@ def _classify_budget_state(
             return "exceeded", "Over zero limit", None
         return "zero_limit", "Zero limit (₹0.00)", 0.0
 
-    pct = round((net_spend_minor / effective_limit_minor) * 100.0, 1)
+    pct = max(0.0, round((net_spend_minor / effective_limit_minor) * 100.0, 1))
     if net_spend_minor > effective_limit_minor:
         return "exceeded", "Over budget", pct
     if net_spend_minor == effective_limit_minor:

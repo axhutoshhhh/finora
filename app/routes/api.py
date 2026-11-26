@@ -56,14 +56,22 @@ def _enforce_api_security() -> tuple[Response, int] | None:
         return _reject("unauthorized", "Valid launch authorization token required.", 401)
 
     if request.endpoint != _ATTACHMENT_UPLOAD_ENDPOINT:
-        content_len = request.content_length or 0
-        if content_len > MAX_CONTENT_LENGTH_BYTES:
+        content_len = request.content_length
+        if content_len is not None and content_len > MAX_CONTENT_LENGTH_BYTES:
             return _reject(
                 "payload_too_large",
                 "Request body exceeds the 64 KiB local safety limit.",
                 413,
             )
-        if request.method in _MUTATING_METHODS and content_len > 0 and not request.is_json:
+        raw_body = request.get_data(cache=True, as_text=False) if content_len is None else b""
+        effective_len = len(raw_body) if content_len is None else content_len
+        if effective_len > MAX_CONTENT_LENGTH_BYTES:
+            return _reject(
+                "payload_too_large",
+                "Request body exceeds the 64 KiB local safety limit.",
+                413,
+            )
+        if request.method in _MUTATING_METHODS and effective_len > 0 and not request.is_json:
             return _reject(
                 "unsupported_media_type",
                 "Request Content-Type must be application/json.",

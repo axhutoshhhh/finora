@@ -112,6 +112,15 @@ def test_idempotency_and_category_kind_validation(isolated_db: Path) -> None:
             {**payload, "amount": "250.00"},
         )
 
+    # Reusing the same idempotency key after archiving the account still replays cleanly
+    from app.services import account_service
+
+    account_service.create_account(isolated_db, {"name": "Backup Bank", "account_type": "bank"})
+    account_service.archive_account(isolated_db, cash_id, confirm_nonzero=True)
+    replayed, created3 = transaction_service.create_transaction(isolated_db, payload)
+    assert created3 is False
+    assert replayed["id"] == first["id"]
+
 
 @pytest.mark.unit
 def test_settings_appearance_persistence(isolated_db: Path, tmp_path: Path) -> None:

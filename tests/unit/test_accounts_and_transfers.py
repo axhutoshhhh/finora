@@ -257,3 +257,22 @@ def test_account_types_archiving_type_lock_and_negative_warning(isolated_db: Pat
 
     restored = account_service.restore_account(isolated_db, wallet["id"])
     assert restored["is_archived"] is False
+
+    # Updating opening_balance_direction alone on a credit card preserves existing absolute opening balance
+    cc = account_service.create_account(
+        isolated_db,
+        {
+            "name": "Axis Card",
+            "account_type": "credit_card",
+            "opening_balance": "1500.00",
+            "opening_balance_direction": "debt",
+            "credit_limit": "50000.00",
+        },
+    )
+    assert cc["opening_balance_minor"] == -150_000
+    flipped = account_service.update_account(
+        isolated_db,
+        cc["id"],
+        {"opening_balance_direction": "credit"},
+    )
+    assert flipped["opening_balance_minor"] == 150_000

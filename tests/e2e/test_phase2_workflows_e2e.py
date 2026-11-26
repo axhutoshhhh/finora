@@ -194,6 +194,7 @@ def test_phase2_complete_ui_workflows_and_screenshots(live_server, tmp_path: Pat
             # 13. Dark mode settings + 900x600 zero-overflow check on Accounts & Budgets
             page.locator('[data-nav-view="settings"]').click()
             page.locator("#tab-settings-general").click()
+            expect(page.locator("#settings-db-path")).not_to_have_text("—")
             page.locator('input[name="appearance"][value="dark"]').check(force=True)
             expect(page.locator('meta[name="color-scheme"]')).to_have_attribute("content", "dark")
             _take_shot(page, capture_state, shot_dir / "p2_17_settings_dark.png")

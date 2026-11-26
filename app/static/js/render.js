@@ -838,7 +838,8 @@ export function renderSettings(settingsData) {
   }
   document.getElementById("settings-currency").textContent = `${settingsData.currency || "INR"} (₹)`;
   document.getElementById("settings-data-dir").textContent = settingsData.storage?.data_dir || "—";
-  document.getElementById("settings-db-path").textContent = settingsData.storage?.db_path || "—";
+  document.getElementById("settings-db-path").textContent =
+    settingsData.storage?.database_path || settingsData.storage?.db_path || "—";
   document.getElementById("settings-encryption-note").textContent =
     settingsData.storage?.encryption_note || "—";
   document.getElementById("settings-version").textContent = settingsData.version || "0.1.0";

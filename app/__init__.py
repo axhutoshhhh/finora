@@ -135,7 +135,12 @@ def create_app(
     @app.errorhandler(413)
     def _handle_payload_too_large(_exc: Any) -> tuple[Response, int]:
         return jsonify(
-            {"error": {"code": "payload_too_large", "message": "Request payload exceeds 64 KiB."}}
+            {
+                "error": {
+                    "code": "payload_too_large",
+                    "message": "Request payload exceeds the allowed size limit.",
+                }
+            }
         ), 413
 
     @app.errorhandler(Exception)

@@ -399,16 +399,6 @@ def create_transaction(
     category_id_raw = payload.get("category_id")
 
     with db_session(db_path, immediate=True) as conn:
-        is_split, postings = _validate_and_build_entry_postings(
-            conn,
-            entry_type=entry_type,
-            account_id=account_id,
-            amount_minor=amount_minor,
-            category_id_raw=category_id_raw,
-            splits_raw=splits_raw,
-        )
-        tag_ids = _parse_tag_ids(conn, payload.get("tag_ids"))
-
         if idempotency_key is not None:
             existing_rows = transactions_repo.get_transaction_rows_by_idempotency_key(
                 conn, idempotency_key
@@ -419,9 +409,42 @@ def create_transaction(
                     (p["account_id"], p["category_id"], p["signed_amount_minor"])
                     for p in serialized["postings"]
                 ]
+                sign = 1 if entry_type == "income" else -1
+                if splits_raw is not None:
+                    req_postings: list[tuple[int, int, int]] | None = None
+                    if isinstance(splits_raw, list):
+                        try:
+                            req_postings = [
+                                (
+                                    account_id,
+                                    _parse_positive_int(
+                                        item.get("category_id"),
+                                        field="splits.category_id",
+                                        label="Split category",
+                                    ),
+                                    sign
+                                    * parse_inr_to_minor(item.get("amount"), field="splits.amount"),
+                                )
+                                for item in splits_raw
+                                if isinstance(item, dict)
+                            ]
+                            if len(req_postings) != len(splits_raw):
+                                req_postings = None
+                        except ValidationError:
+                            req_postings = None
+                else:
+                    try:
+                        cat_id = _parse_positive_int(
+                            category_id_raw, field="category_id", label="Category"
+                        )
+                        req_postings = [(account_id, cat_id, sign * amount_minor)]
+                    except ValidationError:
+                        req_postings = None
+
                 matches = (
                     serialized["entry_type"] == entry_type
-                    and existing_postings == postings
+                    and req_postings is not None
+                    and existing_postings == req_postings
                     and serialized["tx_date"] == tx_date
                     and serialized["description"] == description
                     and serialized["merchant"] == merchant
@@ -432,6 +455,16 @@ def create_transaction(
                         "This submission key was already used for a different transaction."
                     )
                 return serialized, False
+
+        is_split, postings = _validate_and_build_entry_postings(
+            conn,
+            entry_type=entry_type,
+            account_id=account_id,
+            amount_minor=amount_minor,
+            category_id_raw=category_id_raw,
+            splits_raw=splits_raw,
+        )
+        tag_ids = _parse_tag_ids(conn, payload.get("tag_ids"))
 
         now = utc_now_iso()
         tx_id = transactions_repo.create_multi_posting_transaction(
@@ -926,7 +959,10 @@ def update_transaction(
             allocs = payload.get("allocations")
             if allocs is None and "amount" not in payload:
                 allocs = [
-                    {"category_id": p["category_id"], "amount": str(p["amount_minor"] / 100)}
+                    {
+                        "category_id": p["category_id"],
+                        "amount": f"{p['amount_minor'] // 100}.{p['amount_minor'] % 100:02d}",
+                    }
                     for p in existing_tx["postings"]
                 ]
             is_split, postings = _validate_and_build_refund_postings(

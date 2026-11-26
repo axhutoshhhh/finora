@@ -216,3 +216,29 @@ def test_budget_rollover_chains_boundaries_missing_month_and_copy(isolated_db: P
     mar = budget_service.get_month_budgets(isolated_db, month="2024-03")["categories"][0]
     assert mar["carry_in_minor"] == 80_000
     assert mar["effective_limit_minor"] == 180_000
+
+    # Cross-month refund exceeding current month spending clamps usage_percent at 0.0
+    neg_exp = transaction_service.create_transaction(
+        isolated_db,
+        {
+            "entry_type": "expense",
+            "account_id": cash_id,
+            "category_id": food_id,
+            "amount": "500.00",
+            "tx_date": "2024-02-15",
+            "description": "Refundable order",
+        },
+    )[0]
+    transaction_service.create_refund(
+        isolated_db,
+        neg_exp["id"],
+        {
+            "account_id": cash_id,
+            "amount": "500.00",
+            "tx_date": "2024-03-05",
+            "description": "Full refund in March",
+        },
+    )
+    mar_after = budget_service.get_month_budgets(isolated_db, month="2024-03")["categories"][0]
+    assert mar_after["net_spend_minor"] == -50_000
+    assert mar_after["usage_percent"] == 0.0
