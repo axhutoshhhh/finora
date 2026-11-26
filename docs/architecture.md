@@ -4,7 +4,7 @@
 
 ```text
 macOS Desktop Window (pywebview WKWebView + Cocoa Menus)
-   │  in-memory launch token via DesktopBridge
+   │  in-memory launch token via origin-checked WKWebView.run_js
    ▼
 Frontend Shell (Semantic HTML5 + Token CSS + Modular Vanilla JS)
    │  fetch() + X-Finora-Token + strict JSON
@@ -22,7 +22,7 @@ SQLite (`finance.sqlite3`, WAL mode, FK enforcement)
 ```
 
 ## 2. Responsibility Boundaries
-- **Desktop (`desktop/`)**: Path resolution, single-instance lock (`flock`), Waitress server lifecycle, readiness probing, `pywebview` window creation, `DesktopBridge`, native macOS menu bar (`Cmd+N`, `About`, `Quit`), `NSWindow.appearance` synchronization, and clean teardown.
+- **Desktop (`desktop/`)**: Path resolution, single-instance lock (`flock`), Waitress server lifecycle, readiness probing, `pywebview` window creation, `deliver_launch_token()` via `WKWebView.run_js`, native macOS menu bar (`Cmd+N`, `About`, `Quit`), `NSWindow.appearance` synchronization, and clean teardown.
 - **Routes (`app/routes/`)**: Thin HTTP handlers (`pages.py`, `health.py`, `api.py`). Parse JSON, delegate to services, return uniform JSON payloads or error envelopes.
 - **Services (`app/services/`)**: Business validation, monetary conversions via `app/utils/money.py`, calendar/month slicing via `app/utils/time.py`, idempotency checks, and atomic multi-step coordination.
 - **Repositories (`app/repositories/`)**: Parameterized SQLite reads/writes only; no HTTP or HTML awareness.

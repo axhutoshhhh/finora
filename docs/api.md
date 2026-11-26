@@ -30,8 +30,10 @@ Status codes: `400` / `422` validation, `401` missing/invalid launch token, `403
 ### `GET /api/overview?month=YYYY-MM`
 Returns current total account balance (across non-archived accounts), selected-month income, expense, surplus/deficit, active month metadata, and recent transactions (default limit 8).
 
-### `GET /api/transactions?limit=100`
+### `GET /api/transactions?limit=100&offset=0`
 Returns chronological transactions (`tx_date DESC, id DESC`) with posting account, category name/slug/icon, formatted INR amount, minor units, and description.
+- Query params: `limit` (`1..500`, default `100`), `offset` (`>= 0`, default `0`).
+- Response (`200 OK`): `{"transactions": [...], "total_count": N, "limit": ..., "offset": ...}`.
 
 ### `POST /api/transactions`
 Creates a single-posting `expense` or `income` transaction atomically.
@@ -47,13 +49,13 @@ Creates a single-posting `expense` or `income` transaction atomically.
     "idempotency_key": "optional-uuid-v4"
   }
   ```
-- **Responses**: `201 Created` with created transaction object (and idempotent replay returns `200 OK` with existing record if `idempotency_key` matches exact submission, or `409` on conflicting reuse).
+- **Responses**: `201 Created` with `{"transaction": {...}, "created": true}` (or `200 OK` with `{"transaction": {...}, "created": false}` if `idempotency_key` matches exact submission, or `409 Conflict` on conflicting reuse).
 
 ### `GET /api/categories?kind=expense|income`
-Returns active (`is_archived = 0`) categories ordered by `sort_order`.
+Returns active (`is_archived = 0`) categories ordered by `sort_order` under `{"categories": [...]}`.
 
 ### `GET /api/accounts`
-Returns active accounts (`Cash` in Phase 1) with authoritative `balance_minor` and `balance_formatted`.
+Returns active accounts (`Cash` in Phase 1) with authoritative `balance_minor` and `balance_formatted` under `{"accounts": [...]}`.
 
 ### `GET /api/settings`
 Returns current settings (`appearance`: `system` | `light` | `dark`, `currency`: `INR`, `version`, `storage`: storage directory & database path info for user transparency inside the authenticated app).

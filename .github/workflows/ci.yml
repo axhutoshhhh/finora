@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.15"
+
+      - name: Install locked development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.lock
+
+      - name: Run Ruff lint and format checks
+        run: |
+          ruff check app desktop main.py tests scripts benchmarks
+          ruff format --check app desktop main.py tests scripts benchmarks
+
+      - name: Run Bandit security scan
+        run: bandit -r app desktop main.py
+
+      - name: Run pip-audit on runtime lockfile
+        run: pip-audit -r requirements.lock
+
+      - name: Run unit and integration tests
+        run: pytest tests/unit tests/integration
+
+      - name: Install Playwright WebKit and run E2E suite
+        run: |
+          playwright install webkit
+          pytest tests/e2e

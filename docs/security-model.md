@@ -9,21 +9,21 @@ Finora runs locally for a single macOS user without accounts or passwords. Its p
 
 ## 2. Implemented Phase 1 Defenses
 - **Loopback Binding Only**: Waitress binds strictly to `127.0.0.1` on an ephemeral free port (`port=0`), never `0.0.0.0`.
-- **Ephemeral Per-Launch API Token**: `desktop/launcher.py` generates a 256-bit `secrets.token_urlsafe(32)` token in memory per process launch. `pywebview`'s `DesktopBridge.get_launch_token()` verifies the active WebView origin (`http://127.0.0.1:<port>/`) and returns the token strictly into a private JS module closure—never stored in `localStorage`, URLs, HTML templates, logs, or disk.
+- **Ephemeral Per-Launch API Token**: `desktop/launcher.py` generates a 256-bit `secrets.token_urlsafe(32)` token in memory per process launch. `deliver_launch_token()` verifies the active WebView origin (`http://127.0.0.1:<port>/`) and delivers the token via CSP-safe `WKWebView.run_js` (never invoking JS `eval()`) directly into a private JS module closure (`api.js`), immediately deleting any temporary window property (`__finoraSetAuth` / `__finoraPendingAuth`). Never stored in `localStorage`, URLs, HTML templates, logs, or disk.
 - **API Authorization & Anti-CSRF / Anti-DNS-Rebinding**:
   - Every `/api/*` request validates `Host` (`127.0.0.1:<port>`), `Origin` (if present, exact `http://127.0.0.1:<port>`), `Sec-Fetch-Site` (if present, `same-origin` or `none`), and constant-time `X-Finora-Token` (`hmac.compare_digest`).
   - Mutating routes require `Content-Type: application/json` and adhere to `MAX_CONTENT_LENGTH = 65536` bytes.
   - Zero permissive CORS headers (`Access-Control-Allow-Origin` is never emitted).
 - **Frontend Hardening**:
-  - Strict CSP on HTML responses: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`.
-  - Companion headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cross-Origin-Resource-Policy: same-origin`.
+  - Strict CSP on HTML responses: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`.
+  - Companion headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cross-Origin-Resource-Policy: same-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`.
   - All user strings rendered strictly via DOM `textContent` / `createElement`.
-  - External WebView navigation blocked (`pywebview` navigation guard).
+  - External WebView navigation blocked (`OPEN_EXTERNAL_LINKS_IN_BROWSER = False` plus post-load origin verification before token delivery).
   - Zero external CDN assets, zero analytics, zero telemetry.
 - **Filesystem Hygiene**:
   - Runtime directory `~/Library/Application Support/Finora/` (`0700`), SQLite file (`0600`), backups/logs excluded from Git and `.app`.
-  - Technical logs redact request bodies, tokens, and user transaction descriptions.
-  - Flask `debug` mode is forcibly disabled in runtime/packaged builds; unhandled exceptions return generic JSON error IDs without stack traces.
+  - Normal execution paths never log request bodies, launch tokens, or transaction descriptions.
+  - Flask `debug` mode is forcibly disabled in runtime/packaged builds; unhandled exceptions return generic JSON error envelopes without stack traces to clients.
 
 ## 3. Documented Security Limitations
 - **Unencrypted SQLite at Rest**: Standard Python `sqlite3` databases are not encrypted by default. Finora does **not** claim database encryption at rest; local data confidentiality relies on macOS user account POSIX permissions (`0700`/`0600`) and full-disk FileVault encryption when enabled by the user.

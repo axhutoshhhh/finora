@@ -1,11 +1,11 @@
 # Finora — Progress Log
 
-## Phase 1 Milestones
+## Phase 1 Milestones (Complete — `v0.1.0`)
 
-- **Milestone 1 (In Progress)**: Workspace inspected (`macOS 27.0.1`, `arm64`, `Python 3.15.2`, `sqlite3 3.53.4`), Git initialized (`main`), `.gitignore`/`.gitattributes` created, `.venv` created and locked (`requirements.lock`, `requirements-dev.lock`), persistent rules and architecture docs authored.
-- **Milestone 2**: Pending.
-- **Milestone 3**: Pending.
-- **Milestone 4**: Pending.
-- **Milestone 5**: Pending.
-- **Milestone 6**: Pending.
-- **Milestone 7**: Pending.
+- **Milestone 1 (Completed)**: Inspected workspace and environment (`macOS 27.0.1` Build `26A434`, Apple M2 `arm64`, `Python 3.15.2`, `sqlite3 3.53.4`), initialized Git (`main`), configured `.gitignore`/`.gitattributes` and `pyproject.toml`, created isolated `.venv` with `requirements.lock` and `requirements-dev.lock`, and authored `AGENTS.md`, `GEMINI.md`, ADRs (`docs/decisions/0001..0004`), and specifications (`docs/*.md`).
+- **Milestone 2 (Completed)**: Built SQLite database layer (`app/database.py`), atomic DDL/DML migration runner (`app/migrations/runner.py`, `0001_initial_schema.sql`), idempotent seeding (10 expense categories, 7 income categories, default `Cash` account, default `system`/`INR` settings), exact `Decimal` monetary parser & INR formatter (`app/utils/money.py`), calendar/UTC helpers (`app/utils/time.py`), repositories, and services (`60+` unit/DB tests passing).
+- **Milestone 3 (Completed)**: Built Flask application factory (`app/__init__.py`), routes (`health`, `pages`, `api`), loopback `Host`/`Origin`/`Sec-Fetch-Site` guards, constant-time `X-Finora-Token` enforcement, strict CSP headers, payload size/content-type limits, and sanitized JSON error handlers (`8` backend integration tests passing).
+- **Milestone 4 (Completed)**: Created original geometric Finora vector branding (`assets/branding/*.svg`), compiled `Finora.icns` via `iconutil`, bundled 35 Lucide `1.81.0` SVGs locally, built token-based light/dark/system CSS and accessible Jinja/vanilla JS vertical slice (`Overview`, `Transactions`, `Settings`, native `<dialog>` creation), and verified in Playwright WebKit at `1200×780` and `900×600`.
+- **Milestone 5 (Completed)**: Implemented native macOS desktop lifecycle (`desktop/paths.py`, `desktop/lifecycle.py`, `desktop/menus.py`, `desktop/launcher.py`, `main.py`) with Waitress server coordination, `flock` single-instance lock, bounded `/health` probe, CSP-safe `WKWebView.run_js` token delivery (`deliver_launch_token`), native `File -> New Transaction` (`Cmd+N`), and `NSWindow` appearance sync. Verified against live `pywebview` `WKWebView`.
+- **Milestone 6 (Completed)**: Captured and visually inspected WebKit verification screenshots, resolved visual/layout defects (`[hidden]` override, sidebar transitions, `900×600` table padding/wrapping), ran `ruff`, `bandit` (`0` issues), `pip-audit` (`0` vulnerabilities), and recorded Phase 1 baseline metrics via `benchmarks/baseline_phase1.py`.
+- **Milestone 7 (Completed)**: Built and ad-hoc signed `dist/Finora.app` (`34M`, Mach-O `arm64`), verified standalone `open` LaunchServices launch, duplicate-instance guard, and AppleEvent quit, created `.github/workflows/ci.yml`, `README.md`, `SECURITY.md`, `THIRD_PARTY_NOTICES.md`, `CHANGELOG.md`, completed an independent read-only audit (`10e9c7c3-c869-4813-b158-21e68e522f6b`), resolved all identified High/Medium/Low issues (atomic DDL migrations, strict comma-grouping regex, immediate-write idempotency lock, doc alignment, pagination UI, token retry cleanup), re-verified all `77` tests and `Finora.app`, and created local `v0.1.0` checkpoint.
