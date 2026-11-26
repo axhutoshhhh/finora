@@ -1,0 +1,59 @@
+# Python virtual environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Packaging and build outputs
+build/
+dist/
+*.dmg
+*.pkg
+
+# Local databases and runtime financial data (never commit user financial records)
+*.sqlite
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+*.db
+*.db-wal
+*.db-shm
+data/
+runtime_data/
+backups/
+receipts/
+logs/
+preferences.json
+*.finora.lock
+
+# Secrets and local environment files
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.mobileprovision
+
+# Test & Playwright transient outputs (verification screenshots kept intentionally in docs/ or artifacts)
+test-results/
+playwright-report/
+.playwright-artifacts/
+
+# OS & editor clutter
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.vscode/
+.idea/
+*.swp
+*.swo

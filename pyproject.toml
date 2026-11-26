@@ -1,0 +1,64 @@
+[project]
+name = "finora"
+version = "0.1.0"
+description = "Offline-first, single-user personal finance management desktop application for macOS."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "Flask==3.1.3",
+  "waitress==3.0.2",
+  "pywebview==6.2.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==9.2.0",
+  "ruff==0.17.6",
+  "playwright==1.65.2",
+  "pip-audit==2.10.1",
+  "bandit==1.9.4",
+  "pyinstaller==6.22.3",
+  "Pillow==13.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "unit: fast isolated unit and database tests",
+  "integration: Flask backend API and security integration tests",
+  "e2e: Playwright WebKit end-to-end tests",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+exclude = [
+  ".venv",
+  "build",
+  "dist",
+]
+
+[tool.ruff.lint]
+select = [
+  "E",
+  "F",
+  "W",
+  "I",
+  "UP",
+  "B",
+  "S",
+  "SIM",
+]
+ignore = [
+  "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106", "S108"]
+"scripts/**/*.py" = ["S603", "S607"]
+"benchmarks/**/*.py" = ["S101", "S105", "S106"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "build", "dist"]
+skips = []
