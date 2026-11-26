@@ -21,7 +21,7 @@ Finora is a local-first personal finance application for macOS, built with Pytho
 
 ## Installation (Apple Silicon macOS)
 
-1. Download `Finora-v1.0.0-macos-arm64.zip` and `SHA256SUMS.txt` from the GitHub Release.
+1. Download `Finora-v1.0.0-macos-arm64.zip` and `SHA256SUMS.txt` from the [v1.0.0 GitHub Release](https://github.com/axhutoshhhh/finora/releases/tag/v1.0.0) (showcase site: [axhutoshhhh.github.io/finora](https://axhutoshhhh.github.io/finora/)).
 2. Verify the checksum: `shasum -a 256 -c SHA256SUMS.txt`.
 3. Extract the archive and move `Finora.app` to Applications.
 
@@ -47,7 +47,7 @@ playwright install webkit
 
 ## Performance & Testing
 
-On a 10,000-transaction synthetic dataset (`benchmarks/benchmark_phase4.py`), Phase 4 SQLite composite indexing (`0004_phase4_indexes.sql`) and ES-module frontend loading reduced median Overview UI loading from **230.68 ms** (`v0.3.0`) to **121.86 ms** (`v1.0.0`, **-47.2%**), and 100,000-row Overview backend retrieval from **694.04 ms** to **331.27 ms** (**-52.3%**).
+On a 10,000-transaction synthetic dataset (`benchmarks/benchmark_phase4.py`), SQLite composite indexing (`0004_phase4_indexes.sql`) and ES-module frontend loading reduced median Overview UI loading from **230.68 ms** (`v0.3.0`) to **121.86 ms** (`v1.0.0`, **-47.2%**), and 100,000-row Overview backend retrieval from **694.04 ms** to **331.27 ms** (**-52.3%**).
 
 ```bash
 .venv/bin/pytest --cov=app --cov-branch -q

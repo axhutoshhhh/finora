@@ -1,10 +1,10 @@
 # Finora — Engineering & Agent Rules
 
-Finora is an offline-first, single-user personal finance desktop application for macOS (Apple Silicon). Keep these rules authoritative across all five development phases.
+Finora is an offline-first, single-user personal finance desktop application for macOS (Apple Silicon).
 
 ## 1. Approved Technology Stack
 - **Backend**: Python (`>=3.13`, verified on `3.15.2`), Flask (app factory + Blueprints), `sqlite3`, `Decimal` for monetary input, `INTEGER` minor units (paise, `1 INR = 100`) in SQLite, Waitress local WSGI server.
-- **Frontend**: Semantic HTML5, Jinja2, token-based CSS (`light-dark()`, system font stack, `tabular-nums`), modular vanilla JS, locally bundled Lucide SVGs (`ISC`), Chart.js in Phase 3+.
+- **Frontend**: Semantic HTML5, Jinja2, token-based CSS (`light-dark()`, system font stack, `tabular-nums`), modular vanilla JS, locally bundled Lucide SVGs (`ISC`), Chart.js (`MIT`).
 - **Desktop & Packaging**: `pywebview` (`WKWebView`), PyObjC only for native macOS menus / `NSAppearance` / navigation guards, PyInstaller (`--onedir` `.app` for `arm64`).
 - **Prohibited**: React, Electron, Firebase, Docker, Tailwind CSS, cloud DBs, Node.js runtime in the packaged app, login/registration/telemetry/external runtime CDNs.
 
@@ -21,7 +21,7 @@ Finora is an offline-first, single-user personal finance desktop application for
 
 ## 4. UI & Anti-AI-Slop Restrictions
 - Inspire from disciplined macOS tools (Things 3, Apple Numbers, Apple Wallet, Linear) without copying proprietary marks or layouts.
-- **Prohibited**: purple/rainbow gradients, gradient blobs, glowing buttons, excessive shadows, card grids around every section, pill bloat, emoji nav icons, fake traffic lights, decorative illustrations, fake metrics, or nonfunctional buttons for unbuilt phases.
+- **Prohibited**: purple/rainbow gradients, gradient blobs, glowing buttons, excessive shadows, card grids around every section, pill bloat, emoji nav icons, fake traffic lights, decorative illustrations, fake metrics, or nonfunctional buttons.
 - Expose only implemented screens in navigation. Support `system`, `light`, and `dark` appearances without FOUC or color-only state indicators. Keep `900 x 600` usable without horizontal overflow.
 
 ## 5. Security & Privacy Rules
@@ -35,7 +35,6 @@ Finora is an offline-first, single-user personal finance desktop application for
 - Use Ruff (`ruff check`, `ruff format`), Bandit, `pip-audit`, and pytest (`unit`, `integration`, `e2e`).
 - Automated tests must run only against temporary isolated databases and never touch user data.
 - Never fabricate test results, build outputs, or screenshots. Never commit personal financial records, secrets, `.venv/`, `build/`, or `dist/`.
-- Respect phase gates: do not jump into future-phase modules or publish to a remote repository without explicit user approval.
 
 ## 7. Authoritative Documentation
 See `docs/` for specifications: `product-spec.md`, `architecture.md`, `database.md`, `financial-rules.md`, `design-system.md`, `security-model.md`, `api.md`, `test-plan.md`, `acceptance-criteria.md`, `progress.md`, `known-issues.md`, and `docs/decisions/`.

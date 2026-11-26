@@ -1,4 +1,4 @@
-/* Phase 3 Frontend Integration: Reports (Chart.js), Goals, Recurring, Calendar, Insights & Demo Badge */
+/* Secondary views: Reports (Chart.js), Goals, Recurring, Calendar, Insights & Demo Badge */
 import { requestJson as apiFetch } from "./api.js";
 
 const charts = {};
