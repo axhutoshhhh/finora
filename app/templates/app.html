@@ -43,13 +43,13 @@
           </li>
           <li>
             <a href="/reports" class="nav-link" data-nav-view="reports" {% if active_view == "reports" %}aria-current="page"{% endif %}>
-              <span class="icon" data-icon="bar-chart-2" aria-hidden="true"></span>
+              <span class="icon" data-icon="pie-chart" aria-hidden="true"></span>
               <span>Reports</span>
             </a>
           </li>
           <li>
             <a href="/goals" class="nav-link" data-nav-view="goals" {% if active_view == "goals" %}aria-current="page"{% endif %}>
-              <span class="icon" data-icon="target" aria-hidden="true"></span>
+              <span class="icon" data-icon="piggy-bank" aria-hidden="true"></span>
               <span>Savings Goals</span>
             </a>
           </li>
@@ -67,7 +67,7 @@
           </li>
           <li>
             <a href="/insights" class="nav-link" data-nav-view="insights" {% if active_view == "insights" %}aria-current="page"{% endif %}>
-              <span class="icon" data-icon="bell" aria-hidden="true"></span>
+              <span class="icon" data-icon="alert-circle" aria-hidden="true"></span>
               <span>Insights</span>
               <span id="nav-unread-badge" class="badge-count" hidden>0</span>
             </a>
@@ -663,6 +663,65 @@
             </div>
           </div>
         </section>
+
+        <section id="view-reports" class="view-panel" aria-labelledby="page-title" {% if active_view != "reports" %}hidden{% endif %}>
+          <div class="toolbar-row">
+            <select id="reports-preset" class="form-control" aria-label="Report period">
+              <option value="current_month">Current month</option>
+              <option value="previous_month">Previous month</option>
+              <option value="last_3_months">Last 3 months</option>
+              <option value="last_6_months">Last 6 months</option>
+              <option value="current_year">Current year</option>
+              <option value="all_time">All time</option>
+            </select>
+            <button type="button" id="reports-export-csv-btn" class="btn btn-secondary">Export CSV</button>
+            <button type="button" id="reports-export-pdf-btn" class="btn btn-secondary">Export PDF</button>
+          </div>
+          <div id="reports-summary-row" class="summary-strip"></div>
+          <div class="reports-grid">
+            <div class="panel-box"><h2>Income vs Expenses</h2><canvas id="chart-income-expense" height="180"></canvas></div>
+            <div class="panel-box"><h2>Category Spending</h2><canvas id="chart-categories" height="180"></canvas></div>
+            <div class="panel-box"><h2>Net Worth History</h2><canvas id="chart-net-worth" height="180"></canvas></div>
+            <div class="panel-box"><h2>Top Merchants</h2><div id="reports-merchants-list"></div></div>
+          </div>
+        </section>
+
+        <section id="view-goals" class="view-panel" aria-labelledby="page-title" {% if active_view != "goals" %}hidden{% endif %}>
+          <div class="toolbar-row">
+            <span id="goals-summary-text" class="muted-text"></span>
+            <button type="button" id="goal-new-btn" class="btn btn-primary">New Goal</button>
+          </div>
+          <div id="goals-list-container" class="stack-list"></div>
+        </section>
+
+        <section id="view-recurring" class="view-panel" aria-labelledby="page-title" {% if active_view != "recurring" %}hidden{% endif %}>
+          <div class="toolbar-row">
+            <span id="recurring-sub-summary" class="muted-text"></span>
+            <button type="button" id="recurring-new-btn" class="btn btn-primary">New Recurring Rule</button>
+          </div>
+          <h3>Upcoming &amp; Due Occurrences</h3>
+          <div id="recurring-occurrences-list" class="stack-list"></div>
+          <h3>Configured Rules &amp; Subscriptions</h3>
+          <div id="recurring-rules-list" class="stack-list"></div>
+        </section>
+
+        <section id="view-calendar" class="view-panel" aria-labelledby="page-title" {% if active_view != "calendar" %}hidden{% endif %}>
+          <div class="toolbar-row">
+            <button type="button" id="cal-prev-btn" class="btn btn-secondary">Previous</button>
+            <strong id="cal-month-label"></strong>
+            <button type="button" id="cal-next-btn" class="btn btn-secondary">Next</button>
+          </div>
+          <div id="cal-grid" class="calendar-grid"></div>
+          <div id="cal-day-detail" class="panel-box"></div>
+        </section>
+
+        <section id="view-insights" class="view-panel" aria-labelledby="page-title" {% if active_view != "insights" %}hidden{% endif %}>
+          <div class="toolbar-row">
+            <span id="insights-unread-label" class="muted-text"></span>
+            <button type="button" id="insights-read-all-btn" class="btn btn-secondary">Mark All Read</button>
+          </div>
+          <div id="insights-list" class="stack-list"></div>
+        </section>
       </div>
     </main>
   </div>
@@ -1105,65 +1164,6 @@
     <button type="button" id="attachment-close-btn" class="btn btn-primary">Done</button>
   </div>
 </dialog>
-
-<section id="view-reports" class="view-section" {% if active_view != "reports" %}hidden{% endif %}>
-  <div class="toolbar-row">
-    <select id="reports-preset" class="form-control" aria-label="Report period">
-      <option value="current_month">Current month</option>
-      <option value="previous_month">Previous month</option>
-      <option value="last_3_months">Last 3 months</option>
-      <option value="last_6_months">Last 6 months</option>
-      <option value="current_year">Current year</option>
-      <option value="all_time">All time</option>
-    </select>
-    <button type="button" id="reports-export-csv-btn" class="btn btn-secondary">Export CSV</button>
-    <button type="button" id="reports-export-pdf-btn" class="btn btn-secondary">Export PDF</button>
-  </div>
-  <div id="reports-summary-row" class="summary-strip"></div>
-  <div class="reports-grid">
-    <div class="panel-box"><h2>Income vs Expenses</h2><canvas id="chart-income-expense" height="180"></canvas></div>
-    <div class="panel-box"><h2>Category Spending</h2><canvas id="chart-categories" height="180"></canvas></div>
-    <div class="panel-box"><h2>Net Worth History</h2><canvas id="chart-net-worth" height="180"></canvas></div>
-    <div class="panel-box"><h2>Top Merchants</h2><div id="reports-merchants-list"></div></div>
-  </div>
-</section>
-
-<section id="view-goals" class="view-section" {% if active_view != "goals" %}hidden{% endif %}>
-  <div class="toolbar-row">
-    <span id="goals-summary-text" class="muted-text"></span>
-    <button type="button" id="goal-new-btn" class="btn btn-primary">New Goal</button>
-  </div>
-  <div id="goals-list-container" class="stack-list"></div>
-</section>
-
-<section id="view-recurring" class="view-section" {% if active_view != "recurring" %}hidden{% endif %}>
-  <div class="toolbar-row">
-    <span id="recurring-sub-summary" class="muted-text"></span>
-    <button type="button" id="recurring-new-btn" class="btn btn-primary">New Recurring Rule</button>
-  </div>
-  <h3>Upcoming &amp; Due Occurrences</h3>
-  <div id="recurring-occurrences-list" class="stack-list"></div>
-  <h3>Configured Rules &amp; Subscriptions</h3>
-  <div id="recurring-rules-list" class="stack-list"></div>
-</section>
-
-<section id="view-calendar" class="view-section" {% if active_view != "calendar" %}hidden{% endif %}>
-  <div class="toolbar-row">
-    <button type="button" id="cal-prev-btn" class="btn btn-secondary">Previous</button>
-    <strong id="cal-month-label"></strong>
-    <button type="button" id="cal-next-btn" class="btn btn-secondary">Next</button>
-  </div>
-  <div id="cal-grid" class="calendar-grid"></div>
-  <div id="cal-day-detail" class="panel-box"></div>
-</section>
-
-<section id="view-insights" class="view-section" {% if active_view != "insights" %}hidden{% endif %}>
-  <div class="toolbar-row">
-    <span id="insights-unread-label" class="muted-text"></span>
-    <button type="button" id="insights-read-all-btn" class="btn btn-secondary">Mark All Read</button>
-  </div>
-  <div id="insights-list" class="stack-list"></div>
-</section>
 
 <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}" defer></script>
 <script type="module" src="{{ url_for('static', filename='js/phase3.js') }}"></script>

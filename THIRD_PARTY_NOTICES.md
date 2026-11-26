@@ -20,6 +20,7 @@ No `LICENSE` file has been finalized during Phase 1 so the project author retain
 | proxy-tools (`pywebview` dependency) | 0.1.0 | BSD-3-Clause | Transitive dependency of `pywebview` |
 | typing_extensions | 4.16.0 | PSF-2.0 | Transitive typing support |
 | Lucide Icons (`lucide-static`, 56 selected SVGs) | 1.81.0 | ISC (select Feather-derived icons MIT) | Locally bundled monochrome UI & category SVG icons |
+| Chart.js (`chart.umd.min.js`) | 4.4.7 | MIT | Locally bundled offline chart visualization library |
 
 ### Lucide Icons License Notice
 

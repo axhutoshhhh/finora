@@ -206,7 +206,7 @@ function el(tag, cls, text) {
         const v = link.getAttribute("data-nav-view");
         if (p3Titles[v]) {
           ev.preventDefault();
-          document.querySelectorAll(".view-section").forEach((sec) => {
+          document.querySelectorAll(".view-panel").forEach((sec) => {
             sec.hidden = sec.id !== "view-" + v;
           });
           document.querySelectorAll("[data-nav-view]").forEach((l) => {
@@ -215,6 +215,10 @@ function el(tag, cls, text) {
           });
           const titleEl = document.getElementById("page-title");
           if (titleEl) titleEl.textContent = p3Titles[v];
+        } else {
+          document.querySelectorAll("#view-reports,#view-goals,#view-recurring,#view-calendar,#view-insights").forEach((sec) => {
+            sec.hidden = true;
+          });
         }
         if (v === "reports") loadReports();
         if (v === "goals") loadGoals();
