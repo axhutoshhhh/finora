@@ -7,10 +7,10 @@ from typing import Any
 
 from app.database import db_session
 from app.repositories import accounts_repo, transactions_repo
-from app.services import account_service
+from app.services import account_service, budget_service
 from app.services.transaction_service import hydrate_and_serialize_rows
 from app.utils.money import format_inr_minor, validate_aggregate_minor
-from app.utils.time import resolve_month_bounds
+from app.utils.time import resolve_month_bounds, shift_month_key
 
 
 def get_overview(
@@ -44,6 +44,9 @@ def get_overview(
         total_tx_count = transactions_repo.count_transactions(conn)
         recent_rows = transactions_repo.list_transactions(conn, limit=bounded_limit, offset=0)
         recent_serialized = hydrate_and_serialize_rows(conn, recent_rows)
+        budget_data = budget_service.get_month_budgets_from_conn(
+            conn, month_key, month_label, start_date, end_date_exclusive
+        )
 
     validate_aggregate_minor(income_minor, label="Monthly income")
     validate_aggregate_minor(gross_expense_minor, label="Monthly gross expenses")
@@ -56,9 +59,18 @@ def get_overview(
         "total_balance_formatted": positions["net_worth_formatted"],
         "positions": positions,
         "accounts_summary": active_accounts,
+        "budget_summary": {
+            "overall": budget_data["overall"],
+            "summary": budget_data["summary"],
+            "categories": [
+                c for c in budget_data["categories"] if c["base_limit_minor"] is not None
+            ],
+        },
         "month": {
             "key": month_key,
             "label": month_label,
+            "previous_key": shift_month_key(month_key, -1),
+            "next_key": shift_month_key(month_key, 1),
             "income_minor": income_minor,
             "income_formatted": format_inr_minor(income_minor),
             "gross_expense_minor": gross_expense_minor,

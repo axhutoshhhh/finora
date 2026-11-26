@@ -12,6 +12,7 @@ from app.config import MAX_CONTENT_LENGTH_BYTES
 from app.services import (
     account_service,
     attachment_service,
+    budget_service,
     category_service,
     overview_service,
     settings_service,
@@ -393,6 +394,58 @@ def restore_account(account_id: int) -> tuple[Response, int]:
     db_path = current_app.config["FINORA_DB_PATH"]
     account = account_service.restore_account(db_path, account_id)
     return jsonify({"account": account}), 200
+
+
+@api_bp.get("/budgets")
+def get_budgets() -> tuple[Response, int]:
+    """Return monthly category budgets, overall limit, spend, and rollover state."""
+    month = request.args.get("month")
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(budget_service.get_month_budgets(db_path, month=month)), 200
+
+
+@api_bp.put("/budgets")
+@api_bp.put("/budgets/category")
+def put_category_budget() -> tuple[Response, int]:
+    """Create or update a category spending limit for a month."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    data = budget_service.set_category_budget(db_path, payload)
+    return jsonify(data), 200
+
+
+@api_bp.delete("/budgets/<int:category_id>")
+@api_bp.delete("/budgets/category/<int:category_id>")
+def delete_category_budget(category_id: int) -> tuple[Response, int]:
+    """Remove a category's monthly budget limit."""
+    month = request.args.get("month")
+    db_path = current_app.config["FINORA_DB_PATH"]
+    data = budget_service.delete_category_budget(db_path, category_id=category_id, month=month)
+    return jsonify(data), 200
+
+
+@api_bp.put("/budgets/overall")
+def put_overall_budget() -> tuple[Response, int]:
+    """Create or update an overall monthly spending limit."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(budget_service.set_overall_budget(db_path, payload)), 200
+
+
+@api_bp.delete("/budgets/overall")
+def delete_overall_budget() -> tuple[Response, int]:
+    """Remove the overall monthly spending limit."""
+    month = request.args.get("month")
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(budget_service.delete_overall_budget(db_path, month=month)), 200
+
+
+@api_bp.post("/budgets/copy")
+def copy_budgets() -> tuple[Response, int]:
+    """Copy configured budgets from previous (or specified) month into target month."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(budget_service.copy_previous_budgets(db_path, payload)), 200
 
 
 @api_bp.get("/settings")
