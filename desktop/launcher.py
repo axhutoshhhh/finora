@@ -150,7 +150,18 @@ def launch_desktop() -> int:
             def _stop_ui() -> None:
                 with suppress(Exception):
                     window.destroy()
+                if sys.platform == "darwin":
+                    with suppress(Exception):
+                        import AppKit
 
+                        AppKit.NSApplication.sharedApplication().terminate_(None)
+
+            if sys.platform == "darwin":
+                with suppress(Exception):
+                    from PyObjCTools import AppHelper
+
+                    AppHelper.callAfter(_stop_ui)
+                    return
             threading.Thread(target=_stop_ui, daemon=True).start()
 
         signal.signal(signal.SIGTERM, _handle_sigterm)

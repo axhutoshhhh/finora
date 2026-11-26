@@ -2,16 +2,27 @@
 
 from __future__ import annotations
 
+from datetime import date, timedelta
+
 import pytest
 
 from app.utils.errors import ValidationError
-from app.utils.time import resolve_month_bounds, utc_now_iso, validate_tx_date
+from app.utils.time import resolve_month_bounds, shift_month_key, utc_now_iso, validate_tx_date
 
 
 @pytest.mark.unit
 def test_validate_tx_date_valid() -> None:
     assert validate_tx_date("2026-11-26") == "2026-11-26"
     assert validate_tx_date("2024-02-29") == "2024-02-29"  # leap day
+    future = (date.today() + timedelta(days=2)).isoformat()
+    assert validate_tx_date(future, allow_future=True) == future
+
+
+@pytest.mark.unit
+def test_validate_tx_date_rejects_future_by_default() -> None:
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    with pytest.raises(ValidationError):
+        validate_tx_date(tomorrow)
 
 
 @pytest.mark.unit
@@ -41,6 +52,9 @@ def test_resolve_month_bounds_december_rollover() -> None:
     assert label == "December 2026"
     assert start == "2026-12-01"
     assert end == "2027-01-01"
+    assert shift_month_key("2026-12", 1) == "2027-01"
+    assert shift_month_key("2026-01", -1) == "2025-12"
+    assert shift_month_key("2024-02", 1) == "2024-03"
 
 
 @pytest.mark.unit

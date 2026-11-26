@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 from app.utils.errors import ValidationError
 
 MAX_AMOUNT_MINOR = 99_999_999_999  # ₹99,99,99,999.99 (999,999,999.99 INR in paise)
+MAX_SAFE_AGGREGATE_MINOR = 9_000_000_000_000_000  # Within JS Number.MAX_SAFE_INTEGER (9.007e15)
 
 # Accepts plain digits ("1250", "1250.50"), Western grouping ("1,250.00"), or Indian grouping ("1,25,000.50").
 _AMOUNT_PATTERN = re.compile(
@@ -15,8 +16,22 @@ _AMOUNT_PATTERN = re.compile(
 )
 
 
-def parse_inr_to_minor(raw_value: object, *, field: str = "amount") -> int:
-    """Parse a positive INR monetary input into exact integer minor units (paise).
+def validate_aggregate_minor(total_minor: int, *, label: str = "Total") -> int:
+    """Ensure aggregate minor-unit totals stay safely within JS & SQLite integer precision."""
+    if isinstance(total_minor, bool) or not isinstance(total_minor, int):
+        raise TypeError("total_minor must be an integer")
+    if abs(total_minor) > MAX_SAFE_AGGREGATE_MINOR:
+        raise ValidationError(f"{label} exceeds safe arithmetic bounds.")
+    return total_minor
+
+
+def parse_inr_to_minor(
+    raw_value: object,
+    *,
+    field: str = "amount",
+    allow_zero: bool = False,
+) -> int:
+    """Parse a non-negative or positive INR monetary input into exact integer minor units (paise).
 
     Binary floats are explicitly rejected so floating-point inaccuracies never enter
     the financial pipeline.
@@ -30,8 +45,11 @@ def parse_inr_to_minor(raw_value: object, *, field: str = "amount") -> int:
         )
 
     if isinstance(raw_value, int):
-        if raw_value <= 0:
-            raise ValidationError("Amount must be greater than zero.", field=field)
+        if raw_value < 0 or (raw_value == 0 and not allow_zero):
+            msg = (
+                "Amount cannot be negative." if allow_zero else "Amount must be greater than zero."
+            )
+            raise ValidationError(msg, field=field)
         minor = raw_value * 100
         if minor > MAX_AMOUNT_MINOR:
             raise ValidationError(
@@ -52,7 +70,7 @@ def parse_inr_to_minor(raw_value: object, *, field: str = "amount") -> int:
 
     if not _AMOUNT_PATTERN.fullmatch(text):
         raise ValidationError(
-            "Enter a positive amount with up to two decimal places (for example 250.50).",
+            "Enter a valid amount with up to two decimal places (for example 250.50).",
             field=field,
         )
 
@@ -65,8 +83,9 @@ def parse_inr_to_minor(raw_value: object, *, field: str = "amount") -> int:
     if not dec.is_finite() or dec.is_nan():
         raise ValidationError("Invalid monetary amount.", field=field)
 
-    if dec <= Decimal("0"):
-        raise ValidationError("Amount must be greater than zero.", field=field)
+    if dec < Decimal("0") or (dec == Decimal("0") and not allow_zero):
+        msg = "Amount cannot be negative." if allow_zero else "Amount must be greater than zero."
+        raise ValidationError(msg, field=field)
 
     exponent = dec.as_tuple().exponent
     if not isinstance(exponent, int) or exponent < -2:
@@ -76,7 +95,7 @@ def parse_inr_to_minor(raw_value: object, *, field: str = "amount") -> int:
         )
 
     minor = int((dec * 100).to_integral_exact())
-    if minor <= 0 or minor > MAX_AMOUNT_MINOR:
+    if minor > MAX_AMOUNT_MINOR or (minor <= 0 and not allow_zero) or minor < 0:
         raise ValidationError(
             "Amount exceeds the maximum supported value of ₹99,99,99,999.99.",
             field=field,

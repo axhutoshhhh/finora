@@ -23,7 +23,12 @@ def local_today_iso() -> str:
     return date.today().isoformat()
 
 
-def validate_tx_date(raw_value: object, *, field: str = "tx_date") -> str:
+def validate_tx_date(
+    raw_value: object,
+    *,
+    field: str = "tx_date",
+    allow_future: bool = False,
+) -> str:
     """Validate a local calendar transaction date in strict YYYY-MM-DD format."""
     if not isinstance(raw_value, str) or not raw_value.strip():
         raise ValidationError("Transaction date is required.", field=field)
@@ -36,7 +41,24 @@ def validate_tx_date(raw_value: object, *, field: str = "tx_date") -> str:
         raise ValidationError("Enter a valid calendar date.", field=field) from exc
     if parsed < _MIN_DATE or parsed > _MAX_DATE:
         raise ValidationError("Date must be between 1900-01-01 and 2100-12-31.", field=field)
+    if not allow_future and parsed > date.today():
+        raise ValidationError(
+            "Future-dated transactions are reserved for scheduled entries in Phase 3.",
+            field=field,
+        )
     return parsed.isoformat()
+
+
+def shift_month_key(month_key: str, delta_months: int) -> str:
+    """Shift a YYYY-MM calendar month string cleanly across year boundaries."""
+    if not _MONTH_RE.fullmatch(month_key):
+        raise ValidationError("Month must use YYYY-MM format.", field="month")
+    year, month = map(int, month_key.split("-"))
+    total_months = year * 12 + (month - 1) + delta_months
+    if total_months < 1900 * 12 or total_months > 2100 * 12 + 11:
+        raise ValidationError("Target month is out of supported range.", field="month")
+    new_year, zero_month = divmod(total_months, 12)
+    return f"{new_year:04d}-{zero_month + 1:02d}"
 
 
 def resolve_month_bounds(raw_month: str | None) -> tuple[str, str, str, str]:

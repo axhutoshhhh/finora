@@ -7,7 +7,13 @@ from decimal import Decimal
 import pytest
 
 from app.utils.errors import ValidationError
-from app.utils.money import MAX_AMOUNT_MINOR, format_inr_minor, parse_inr_to_minor
+from app.utils.money import (
+    MAX_AMOUNT_MINOR,
+    MAX_SAFE_AGGREGATE_MINOR,
+    format_inr_minor,
+    parse_inr_to_minor,
+    validate_aggregate_minor,
+)
 
 
 @pytest.mark.unit
@@ -84,3 +90,13 @@ def test_parse_inr_to_minor_invalid(raw: object) -> None:
 )
 def test_format_inr_minor(minor: int, show_plus: bool, expected: str) -> None:
     assert format_inr_minor(minor, show_plus=show_plus) == expected
+
+
+@pytest.mark.unit
+def test_parse_allow_zero_and_aggregate_bounds() -> None:
+    assert parse_inr_to_minor("0", allow_zero=True) == 0
+    assert parse_inr_to_minor("0.00", allow_zero=True) == 0
+    assert parse_inr_to_minor(0, allow_zero=True) == 0
+    assert validate_aggregate_minor(MAX_SAFE_AGGREGATE_MINOR) == MAX_SAFE_AGGREGATE_MINOR
+    with pytest.raises(ValidationError):
+        validate_aggregate_minor(MAX_SAFE_AGGREGATE_MINOR + 1)

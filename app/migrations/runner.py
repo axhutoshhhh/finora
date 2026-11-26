@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import re
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
 
-from app.database import db_session
+from app.database import db_session, ensure_secure_data_dir
 from app.utils.errors import DatabaseError
 from app.utils.time import utc_now_iso
 
@@ -77,10 +79,97 @@ def _discover_migrations(migrations_dir: Path) -> list[tuple[int, str, Path]]:
     return found
 
 
-def apply_migrations(conn: sqlite3.Connection, migrations_dir: Path | None = None) -> list[int]:
+def create_pre_migration_backup(
+    conn: sqlite3.Connection,
+    db_path: Path,
+    *,
+    current_version: int,
+    target_version: int,
+) -> Path:
+    """Create and verify an online SQLite pre-migration backup outside the repo and .app."""
+    backups_dir = db_path.parent / "backups"
+    ensure_secure_data_dir(backups_dir)
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    backup_path = backups_dir / (
+        f"pre_migration_v{current_version}_to_v{target_version}_{stamp}.sqlite3"
+    )
+    suffix = 1
+    while backup_path.exists():
+        backup_path = backups_dir / (
+            f"pre_migration_v{current_version}_to_v{target_version}_{stamp}_{suffix}.sqlite3"
+        )
+        suffix += 1
+
+    backup_conn = sqlite3.connect(os.fspath(backup_path))
+    try:
+        conn.backup(backup_conn)
+        check_row = backup_conn.execute("PRAGMA quick_check;").fetchone()
+        if check_row is None or str(check_row[0]).lower() != "ok":
+            raise DatabaseError("Pre-migration backup verification failed; migration aborted.")
+    except sqlite3.Error as exc:
+        raise DatabaseError(
+            "Unable to create a verified pre-migration database backup; existing data is untouched."
+        ) from exc
+    finally:
+        backup_conn.close()
+
+    os.chmod(backup_path, 0o600)
+    return backup_path
+
+
+def verify_database_integrity(conn: sqlite3.Connection) -> None:
+    """Verify foreign-key consistency and structural SQLite integrity after migration."""
+    fk_rows = conn.execute("PRAGMA foreign_key_check;").fetchall()
+    if fk_rows:
+        raise DatabaseError(
+            "Database foreign-key check failed after migration; transaction rolled back."
+        )
+    integrity_row = conn.execute("PRAGMA integrity_check;").fetchone()
+    if integrity_row is None or str(integrity_row[0]).lower() != "ok":
+        raise DatabaseError("Database integrity check failed after migration.")
+
+
+def _get_applied_versions(conn: sqlite3.Connection) -> set[int]:
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations';"
+    ).fetchone()
+    if row is None:
+        return set()
+    rows = conn.execute("SELECT version FROM schema_migrations;").fetchall()
+    return {int(r["version"]) for r in rows}
+
+
+def apply_migrations(
+    conn: sqlite3.Connection,
+    migrations_dir: Path | None = None,
+    *,
+    db_path: Path | None = None,
+    backup_on_upgrade: bool = False,
+) -> list[int]:
     """Apply all pending SQL migrations atomically inside an explicit SQLite transaction."""
     sql_dir = migrations_dir or default_migrations_dir()
     migrations = _discover_migrations(sql_dir)
+    if not migrations:
+        return []
+
+    existing_versions = _get_applied_versions(conn)
+    pending = [(v, n, p) for v, n, p in migrations if v not in existing_versions]
+    if not pending:
+        return []
+
+    if (
+        backup_on_upgrade
+        and existing_versions
+        and db_path is not None
+        and str(db_path) != ":memory:"
+        and db_path.exists()
+    ):
+        create_pre_migration_backup(
+            conn,
+            db_path,
+            current_version=max(existing_versions),
+            target_version=max(v for v, _, _ in pending),
+        )
 
     started_txn = False
     if not conn.in_transaction:
@@ -97,8 +186,10 @@ def apply_migrations(conn: sqlite3.Connection, migrations_dir: Path | None = Non
             );
             """
         )
-        applied_rows = conn.execute("SELECT version FROM schema_migrations;").fetchall()
-        applied_versions = {int(row["version"]) for row in applied_rows}
+        applied_versions = {
+            int(row["version"])
+            for row in conn.execute("SELECT version FROM schema_migrations;").fetchall()
+        }
 
         newly_applied: list[int] = []
         for version, name, sql_path in migrations:
@@ -112,6 +203,9 @@ def apply_migrations(conn: sqlite3.Connection, migrations_dir: Path | None = Non
                 (version, name, utc_now_iso()),
             )
             newly_applied.append(version)
+
+        if newly_applied:
+            verify_database_integrity(conn)
         if started_txn:
             conn.commit()
         return newly_applied
@@ -147,15 +241,29 @@ def seed_defaults(conn: sqlite3.Connection) -> None:
 
     existing_accounts = conn.execute("SELECT COUNT(*) FROM accounts;").fetchone()[0]
     if existing_accounts == 0:
-        conn.execute(
-            """
-            INSERT INTO accounts (
-                name, account_type, opening_balance_minor, currency, is_default, is_archived, created_at, updated_at
+        cols = {str(r["name"]) for r in conn.execute("PRAGMA table_info(accounts);").fetchall()}
+        if "opening_balance_date" in cols:
+            conn.execute(
+                """
+                INSERT INTO accounts (
+                    name, account_type, opening_balance_minor, opening_balance_date,
+                    description, icon, color_token, credit_limit_minor,
+                    currency, is_default, is_archived, created_at, updated_at
+                )
+                VALUES ('Cash', 'cash', 0, ?, 'Primary cash wallet', 'wallet', 'cat-forest', NULL, 'INR', 1, 0, ?, ?);
+                """,
+                (now[:10], now, now),
             )
-            VALUES ('Cash', 'cash', 0, 'INR', 1, 0, ?, ?);
-            """,
-            (now, now),
-        )
+        else:
+            conn.execute(
+                """
+                INSERT INTO accounts (
+                    name, account_type, opening_balance_minor, currency, is_default, is_archived, created_at, updated_at
+                )
+                VALUES ('Cash', 'cash', 0, 'INR', 1, 0, ?, ?);
+                """,
+                (now, now),
+            )
 
     for key, value in (("appearance", "system"), ("currency", "INR")):
         conn.execute(
@@ -173,8 +281,20 @@ def initialize_database(
     *,
     migrations_dir: Path | None = None,
 ) -> list[int]:
-    """Initialize database file, run pending migrations, and seed baseline records."""
+    """Initialize database file, create backup before upgrading existing DB, migrate, and seed."""
+    resolved_path = Path(db_path) if str(db_path) != ":memory:" else None
     with db_session(db_path) as conn:
-        applied = apply_migrations(conn, migrations_dir=migrations_dir)
+        try:
+            applied = apply_migrations(
+                conn,
+                migrations_dir=migrations_dir,
+                db_path=resolved_path,
+                backup_on_upgrade=True,
+            )
+        except sqlite3.Error as exc:
+            raise DatabaseError(
+                "Database schema migration failed and was rolled back safely. "
+                "Your original records and any pre-migration backup in the backups directory remain intact."
+            ) from exc
         seed_defaults(conn)
         return applied
