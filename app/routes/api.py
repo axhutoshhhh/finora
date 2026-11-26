@@ -630,3 +630,183 @@ def update_notification_preferences() -> tuple[Response, int]:
     return jsonify(
         {"preferences": advisory_service.update_notification_preferences(db_path, items)}
     ), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: Savings Goals, Recurring, Calendar & Categorization
+# ---------------------------------------------------------------------------
+
+
+@api_bp.get("/goals")
+def list_goals() -> tuple[Response, int]:
+    from app.services import goal_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    inc_arch = request.args.get("include_archived", "0") == "1"
+    return jsonify(goal_service.list_goals(db_path, include_archived=inc_arch)), 200
+
+
+@api_bp.post("/goals")
+def create_goal() -> tuple[Response, int]:
+    from app.services import goal_service
+
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"goal": goal_service.create_goal(db_path, payload)}), 201
+
+
+@api_bp.get("/goals/<int:goal_id>")
+def get_goal_detail(goal_id: int) -> tuple[Response, int]:
+    from app.services import goal_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(goal_service.get_goal_detail(db_path, goal_id)), 200
+
+
+@api_bp.post("/goals/<int:goal_id>/contributions")
+def add_goal_contribution(goal_id: int) -> tuple[Response, int]:
+    from app.services import goal_service
+
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(
+        goal_service.add_contribution(db_path, goal_id, payload, is_withdrawal=False)
+    ), 201
+
+
+@api_bp.post("/goals/<int:goal_id>/withdrawals")
+def withdraw_goal_contribution(goal_id: int) -> tuple[Response, int]:
+    from app.services import goal_service
+
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(
+        goal_service.add_contribution(db_path, goal_id, payload, is_withdrawal=True)
+    ), 201
+
+
+@api_bp.post("/goals/<int:goal_id>/complete")
+def complete_goal(goal_id: int) -> tuple[Response, int]:
+    from app.services import goal_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"goal": goal_service.update_goal_status(db_path, goal_id, "completed")}), 200
+
+
+@api_bp.post("/goals/<int:goal_id>/archive")
+def archive_goal(goal_id: int) -> tuple[Response, int]:
+    from app.services import goal_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"goal": goal_service.update_goal_status(db_path, goal_id, "archived")}), 200
+
+
+@api_bp.post("/goals/<int:goal_id>/restore")
+def restore_goal(goal_id: int) -> tuple[Response, int]:
+    from app.services import goal_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"goal": goal_service.update_goal_status(db_path, goal_id, "active")}), 200
+
+
+@api_bp.get("/recurring")
+def list_recurring_rules() -> tuple[Response, int]:
+    from app.services import recurring_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    recurring_service.sync_occurrences(db_path)
+    data = recurring_service.list_rules(db_path)
+    data["occurrences"] = recurring_service.list_occurrences(db_path)
+    return jsonify(data), 200
+
+
+@api_bp.post("/recurring")
+def create_recurring_rule() -> tuple[Response, int]:
+    from app.services import recurring_service
+
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"rule": recurring_service.create_rule(db_path, payload)}), 201
+
+
+@api_bp.post("/recurring/<int:rule_id>/pause")
+def pause_recurring_rule(rule_id: int) -> tuple[Response, int]:
+    from app.services import recurring_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(recurring_service.update_rule_status(db_path, rule_id, "paused")), 200
+
+
+@api_bp.post("/recurring/<int:rule_id>/resume")
+def resume_recurring_rule(rule_id: int) -> tuple[Response, int]:
+    from app.services import recurring_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(recurring_service.update_rule_status(db_path, rule_id, "active")), 200
+
+
+@api_bp.post("/recurring/occurrences/<int:occurrence_id>/post")
+def post_recurring_occurrence(occurrence_id: int) -> tuple[Response, int]:
+    from app.services import recurring_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(recurring_service.post_occurrence(db_path, occurrence_id)), 200
+
+
+@api_bp.post("/recurring/occurrences/<int:occurrence_id>/skip")
+def skip_recurring_occurrence(occurrence_id: int) -> tuple[Response, int]:
+    from app.services import recurring_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(recurring_service.skip_occurrence(db_path, occurrence_id)), 200
+
+
+@api_bp.get("/calendar")
+def get_calendar_month() -> tuple[Response, int]:
+    from datetime import date
+
+    from app.services import calendar_service, recurring_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    recurring_service.sync_occurrences(db_path)
+    month = request.args.get("month") or date.today().strftime("%Y-%m")
+    return jsonify(calendar_service.get_month_calendar(db_path, month=month)), 200
+
+
+@api_bp.get("/categorization-rules")
+def list_categorization_rules() -> tuple[Response, int]:
+    from app.services import categorization_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"rules": categorization_service.list_rules(db_path)}), 200
+
+
+@api_bp.post("/categorization-rules")
+def create_categorization_rule() -> tuple[Response, int]:
+    from app.services import categorization_service
+
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"rule": categorization_service.create_rule(db_path, payload)}), 201
+
+
+@api_bp.delete("/categorization-rules/<int:rule_id>")
+def delete_categorization_rule(rule_id: int) -> tuple[Response, int]:
+    from app.services import categorization_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify(categorization_service.delete_rule(db_path, rule_id)), 200
+
+
+@api_bp.get("/categorization/suggest")
+def suggest_categorization() -> tuple[Response, int]:
+    from app.services import categorization_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    suggestion = categorization_service.suggest_category(
+        db_path,
+        entry_type=request.args.get("entry_type", "expense"),
+        merchant=request.args.get("merchant", ""),
+        description=request.args.get("description", ""),
+    )
+    return jsonify({"suggestion": suggestion}), 200
