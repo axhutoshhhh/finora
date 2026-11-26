@@ -810,3 +810,113 @@ def suggest_categorization() -> tuple[Response, int]:
         description=request.args.get("description", ""),
     )
     return jsonify({"suggestion": suggestion}), 200
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: CSV Import, CSV/PDF Export & Backup/Restore
+# ---------------------------------------------------------------------------
+
+
+@api_bp.post("/import/preview")
+def preview_csv_import() -> tuple[Response, int]:
+    from app.services import import_service
+
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    csv_text = str(payload.get("csv_text") or "")
+    account_id = int(payload.get("account_id") or 0)
+    mapping = payload.get("mapping") if isinstance(payload.get("mapping"), dict) else {}
+    date_format = str(payload.get("date_format") or "auto")
+    res = import_service.preview_csv_import(
+        db_path,
+        csv_bytes=csv_text.encode("utf-8"),
+        account_id=account_id,
+        mapping=mapping,
+        date_format=date_format,
+    )
+    return jsonify(res), 200
+
+
+@api_bp.post("/import/commit")
+def commit_csv_import() -> tuple[Response, int]:
+    from app.services import import_service
+
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    res = import_service.commit_csv_import(
+        db_path,
+        batch_uuid=str(payload.get("batch_uuid") or ""),
+        source_filename=str(payload.get("source_filename") or "import.csv"),
+        account_id=int(payload.get("account_id") or 0),
+        rows=payload.get("rows") if isinstance(payload.get("rows"), list) else [],
+    )
+    return jsonify(res), 201
+
+
+@api_bp.get("/import/history")
+def list_import_history() -> tuple[Response, int]:
+    from app.services import import_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    return jsonify({"batches": import_service.list_import_history(db_path)}), 200
+
+
+@api_bp.get("/export/csv")
+def export_csv() -> Response:
+    from app.services import export_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    csv_data = export_service.export_transactions_csv(db_path)
+    return Response(
+        csv_data,
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=finora-transactions.csv"},
+    )
+
+
+@api_bp.get("/export/pdf")
+def export_pdf() -> Response:
+    from app.services import export_service
+
+    db_path = current_app.config["FINORA_DB_PATH"]
+    pdf_bytes = export_service.export_pdf_report(
+        db_path,
+        preset=request.args.get("preset", "current_month"),
+        start_date=request.args.get("start_date"),
+        end_date=request.args.get("end_date"),
+    )
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=finora-report.pdf"},
+    )
+
+
+@api_bp.post("/backups")
+def create_backup() -> tuple[Response, int]:
+    from pathlib import Path
+
+    from app.services import backup_service
+
+    data_dir = Path(current_app.config["FINORA_DATA_DIR"])
+    db_path = Path(current_app.config["FINORA_DB_PATH"])
+    return jsonify(backup_service.create_workspace_backup(data_dir, db_path)), 201
+
+
+@api_bp.post("/backups/restore")
+def restore_backup() -> tuple[Response, int]:
+    from pathlib import Path
+
+    from app.services import backup_service
+
+    payload = _parse_json_object()
+    data_dir = Path(current_app.config["FINORA_DATA_DIR"])
+    db_path = Path(current_app.config["FINORA_DB_PATH"])
+    bpath = Path(str(payload.get("backup_path") or ""))
+    # Restrict restore to files inside data_dir/backups for API safety
+    backups_root = (data_dir / "backups").resolve()
+    if backups_root not in bpath.resolve().parents:
+        raise ValidationError(
+            "Backup path must reside inside the Finora backups folder.", field="backup_path"
+        )
+    return jsonify(backup_service.restore_workspace_backup(data_dir, db_path, bpath)), 200
