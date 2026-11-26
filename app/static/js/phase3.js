@@ -193,9 +193,29 @@ function el(tag, cls, text) {
     const presetEl = document.getElementById("reports-preset");
     if (presetEl) presetEl.addEventListener("change", loadReports);
 
+    const p3Titles = {
+      reports: "Reports",
+      goals: "Savings Goals",
+      recurring: "Recurring Payments",
+      calendar: "Calendar",
+      insights: "Insights",
+    };
+
     document.querySelectorAll("[data-nav-view]").forEach((link) => {
-      link.addEventListener("click", () => {
+      link.addEventListener("click", (ev) => {
         const v = link.getAttribute("data-nav-view");
+        if (p3Titles[v]) {
+          ev.preventDefault();
+          document.querySelectorAll(".view-section").forEach((sec) => {
+            sec.hidden = sec.id !== "view-" + v;
+          });
+          document.querySelectorAll("[data-nav-view]").forEach((l) => {
+            if (l.getAttribute("data-nav-view") === v) l.setAttribute("aria-current", "page");
+            else l.removeAttribute("aria-current");
+          });
+          const titleEl = document.getElementById("page-title");
+          if (titleEl) titleEl.textContent = p3Titles[v];
+        }
         if (v === "reports") loadReports();
         if (v === "goals") loadGoals();
         if (v === "recurring") loadRecurring();

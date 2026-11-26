@@ -86,7 +86,21 @@ def create_rule(db_path: Path | str, payload: dict[str, Any]) -> dict[str, Any]:
         acct = accounts_repo.get_account_by_id(conn, account_id)
         if acct is None or int(acct["is_archived"]) == 1:
             raise NotFoundError("Account not found.", field="account_id")
-        if entry_type in ("expense", "income"):
+        if entry_type == "transfer":
+            if acct["account_type"] == "credit_card":
+                raise ValidationError(
+                    "Credit card accounts cannot be the source of a recurring transfer.",
+                    field="account_id",
+                )
+            if to_account_id is None or int(to_account_id) == account_id:
+                raise ValidationError(
+                    "Transfer requires a distinct destination account.", field="to_account_id"
+                )
+            to_acct = accounts_repo.get_account_by_id(conn, int(to_account_id))
+            if to_acct is None or int(to_acct["is_archived"]) == 1:
+                raise NotFoundError("Destination account not found.", field="to_account_id")
+            category_id = None
+        elif entry_type in ("expense", "income"):
             if category_id is None:
                 raise ValidationError("Category is required.", field="category_id")
             cat = categories_repo.get_category_by_id(conn, int(category_id))
@@ -122,7 +136,7 @@ def create_rule(db_path: Path | str, payload: dict[str, Any]) -> dict[str, Any]:
             ),
         )
         rid = int(cur.lastrowid)
-    sync_occurrences(db_path, today=date.fromisoformat(start_iso))
+    sync_occurrences(db_path)
     return next(r for r in list_rules(db_path)["rules"] if r["id"] == rid)
 
 
@@ -253,7 +267,14 @@ def post_occurrence(db_path: Path | str, occurrence_id: int) -> dict[str, Any]:
         ).fetchone()
         amt = int(occ["amount_minor"])
         etype = str(rule["entry_type"])
-        signed = amt if etype == "income" else -amt
+        if etype == "transfer":
+            postings = [
+                (int(rule["account_id"]), None, -amt),
+                (int(rule["to_account_id"]), None, amt),
+            ]
+        else:
+            signed = amt if etype == "income" else -amt
+            postings = [(int(rule["account_id"]), rule["category_id"], signed)]
         tx_id = transactions_repo.create_multi_posting_transaction(
             conn,
             entry_type=etype,
@@ -263,7 +284,7 @@ def post_occurrence(db_path: Path | str, occurrence_id: int) -> dict[str, Any]:
             payment_method=str(rule["payment_method"] or "other"),
             is_split=False,
             idempotency_key=f"recurring-occ-{occurrence_id}",
-            postings=[(int(rule["account_id"]), rule["category_id"], signed)],
+            postings=postings,
             now=now,
         )
         conn.execute(

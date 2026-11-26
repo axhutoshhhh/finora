@@ -378,6 +378,10 @@ def update_notification_preferences(
             enabled = 1 if item.get("enabled", True) else 0
             native = 1 if item.get("native_enabled", False) else 0
             thresh = item.get("threshold_value")
+            if thresh is not None and (
+                isinstance(thresh, bool) or not isinstance(thresh, int) or thresh < 0
+            ):
+                raise ValueError("threshold_value must be a non-negative integer or null.")
             conn.execute(
                 """
                 INSERT INTO notification_preferences (rule_id, enabled, threshold_value, native_enabled, updated_at)

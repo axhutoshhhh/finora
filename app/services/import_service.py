@@ -227,8 +227,18 @@ def commit_csv_import(
             if st not in ("valid", "possible_duplicate"):
                 raise ConflictError("Invalid import row status.")
 
-            etype = str(item["entry_type"])
-            amt_minor = int(item["amount_minor"])
+            etype = str(item.get("entry_type") or "")
+            if etype not in ("expense", "income"):
+                raise ValidationError(
+                    "Imported rows must be expense or income.", field="entry_type"
+                )
+            amt_minor = int(item.get("amount_minor") or 0)
+            if amt_minor <= 0 or amt_minor > 99_999_999_999:
+                raise ValidationError("Imported amount is out of bounds.", field="amount_minor")
+            cat_id = int(item.get("category_id") or 0)
+            cat = categories_repo.get_category_by_id(conn, cat_id)
+            if cat is None or int(cat["is_archived"]) == 1 or str(cat["kind"]) != etype:
+                raise ValidationError("Invalid category for imported row.", field="category_id")
             signed = amt_minor if etype == "income" else -amt_minor
             tx_id = transactions_repo.create_multi_posting_transaction(
                 conn,
