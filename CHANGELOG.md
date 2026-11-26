@@ -2,6 +2,17 @@
 
 All notable changes to Finora are documented in this file.
 
+## [0.3.0] - 2026-11-27 (Phase 3 — Advanced Features, Analytics & Financial Intelligence)
+
+### Added
+- **Migration `0003_phase3_intelligence.sql`**: Added `savings_goals`, `goal_allocations`, `recurring_rules`, `recurring_occurrences`, `notification_events`, `notification_preferences`, `categorization_rules`, `import_batches`, and `import_batch_rows`.
+- **Analytics & Reports**: Implemented `analytics_service.py`, `analytics_repo.py`, locally bundled `Chart.js 4.4.7` UMD (`app/static/vendor/chart.umd.min.js`), and `/api/analytics/*` endpoints.
+- **Advisory Engine & Forecasting**: Implemented deterministic deduplicated advisory rules (`advisory_service.py`), pace-based monthly spending forecasts (`forecasting_service.py`), and `/api/insights` + `/api/notifications*`.
+- **Savings Goals & Recurring**: Implemented ledger-backed goal allocations (`goal_service.py`), recurring rules/subscriptions with Jan 31 / Feb 29 anchor preservation and atomic idempotent posting (`recurring_service.py`).
+- **Calendar & Auto-Categorization**: Implemented monthly financial calendar (`calendar_service.py`) and merchant/description rule engine (`categorization_service.py`).
+- **Import, Export, Backup & Demo Workspace**: Implemented bounded CSV import preview/commit (`import_service.py`), formula-injection-safe CSV & offline PDF 1.4 export (`export_service.py`), SHA-256 ZIP backup & staged restore (`backup_service.py`), and isolated synthetic demo workspace (`workspace_service.py`).
+- **Benchmarks**: Added `benchmarks/baseline_phase3.py` (0–10k datasets).
+
 ## [0.2.0] - 2026-11-27 (Phase 2 — Core Financial Functionality)
 
 ### Added

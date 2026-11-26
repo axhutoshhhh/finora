@@ -1,6 +1,6 @@
 [project]
 name = "finora"
-version = "0.2.0"
+version = "0.3.0"
 description = "Offline-first, single-user personal finance management desktop application for macOS."
 readme = "README.md"
 requires-python = ">=3.13"
