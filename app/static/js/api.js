@@ -15,26 +15,33 @@ async function resolveLaunchToken() {
   }
 
   _tokenPromise = new Promise((resolve, reject) => {
-    const readBridgeToken = async () => {
-      try {
-        const token = await window.pywebview.api.get_launch_token();
-        if (!token || typeof token !== "string") {
-          reject(new Error("Desktop authorization token is unavailable."));
-          return;
-        }
-        _launchToken = token;
-        resolve(token);
-      } catch (err) {
-        reject(err);
-      }
-    };
-
-    if (window.pywebview?.api?.get_launch_token) {
-      readBridgeToken();
+    // Path 1: Python desktop launcher delivered token before ES module initialized.
+    if (typeof window.__finoraPendingAuth === "string" && window.__finoraPendingAuth.length > 0) {
+      const token = window.__finoraPendingAuth;
+      delete window.__finoraPendingAuth;
+      _launchToken = token;
+      resolve(token);
       return;
     }
 
+    // Path 2: E2E browser harness stubbed pywebview bridge.
+    if (window.pywebview?.api?.get_launch_token && !window.__finoraUseRunJsBridge) {
+      Promise.resolve(window.pywebview.api.get_launch_token())
+        .then((token) => {
+          if (!token || typeof token !== "string") {
+            reject(new Error("Desktop authorization token is unavailable."));
+            return;
+          }
+          _launchToken = token;
+          resolve(token);
+        })
+        .catch(reject);
+      return;
+    }
+
+    // Path 3: Wait for CSP-safe window.run_js() handshake from desktop launcher.
     const timeoutId = window.setTimeout(() => {
+      delete window.__finoraSetAuth;
       reject(
         new Error(
           "Finora's desktop security bridge is not attached. Please launch Finora as a desktop app."
@@ -42,18 +49,16 @@ async function resolveLaunchToken() {
       );
     }, 5000);
 
-    window.addEventListener(
-      "pywebviewready",
-      () => {
-        window.clearTimeout(timeoutId);
-        if (window.pywebview?.api?.get_launch_token) {
-          readBridgeToken();
-        } else {
-          reject(new Error("Desktop API bridge did not expose launch authorization."));
-        }
-      },
-      { once: true }
-    );
+    window.__finoraSetAuth = (token) => {
+      window.clearTimeout(timeoutId);
+      delete window.__finoraSetAuth;
+      if (!token || typeof token !== "string") {
+        reject(new Error("Desktop authorization token is unavailable."));
+        return;
+      }
+      _launchToken = token;
+      resolve(token);
+    };
   });
 
   return _tokenPromise;
