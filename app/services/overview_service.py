@@ -8,7 +8,7 @@ from typing import Any
 from app.database import db_session
 from app.repositories import accounts_repo, transactions_repo
 from app.services import account_service
-from app.services.transaction_service import group_and_serialize_transaction_rows
+from app.services.transaction_service import hydrate_and_serialize_rows
 from app.utils.money import format_inr_minor, validate_aggregate_minor
 from app.utils.time import resolve_month_bounds
 
@@ -43,6 +43,7 @@ def get_overview(
         surplus_minor = income_minor - net_expense_minor
         total_tx_count = transactions_repo.count_transactions(conn)
         recent_rows = transactions_repo.list_transactions(conn, limit=bounded_limit, offset=0)
+        recent_serialized = hydrate_and_serialize_rows(conn, recent_rows)
 
     validate_aggregate_minor(income_minor, label="Monthly income")
     validate_aggregate_minor(gross_expense_minor, label="Monthly gross expenses")
@@ -73,5 +74,5 @@ def get_overview(
         },
         "has_transactions": total_tx_count > 0,
         "transaction_count": total_tx_count,
-        "recent_transactions": group_and_serialize_transaction_rows(recent_rows),
+        "recent_transactions": recent_serialized,
     }

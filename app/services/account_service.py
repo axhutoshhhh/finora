@@ -8,7 +8,7 @@ from typing import Any
 
 from app.database import db_session
 from app.repositories import accounts_repo, transactions_repo
-from app.services.transaction_service import group_and_serialize_transaction_rows
+from app.services.transaction_service import hydrate_and_serialize_rows
 from app.utils.errors import ConflictError, NotFoundError, ValidationError
 from app.utils.money import format_inr_minor, parse_inr_to_minor, validate_aggregate_minor
 from app.utils.time import local_today_iso, validate_tx_date
@@ -487,6 +487,7 @@ def get_account_detail(db_path: Path | str, account_id: int, *, limit: int = 25)
         recent_rows = transactions_repo.list_transactions_for_account(
             conn, account_id=account_id, limit=bounded_limit
         )
+        recent_serialized = hydrate_and_serialize_rows(conn, recent_rows)
         return {
             "account": serialize_account_row(acct_row),
             "activity": {
@@ -501,5 +502,5 @@ def get_account_detail(db_path: Path | str, account_id: int, *, limit: int = 25)
                 "net_transfer_minor": xfer_net_minor,
                 "net_transfer_formatted": format_inr_minor(xfer_net_minor, show_plus=True),
             },
-            "recent_transactions": group_and_serialize_transaction_rows(recent_rows),
+            "recent_transactions": recent_serialized,
         }

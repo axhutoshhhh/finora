@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 from flask import Blueprint, Response, current_app, jsonify, request
 
+from app.config import MAX_CONTENT_LENGTH_BYTES
 from app.services import (
     account_service,
     overview_service,
@@ -19,6 +20,7 @@ from app.utils.errors import ValidationError
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 _MUTATING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+_ATTACHMENT_UPLOAD_ENDPOINT = "api.upload_transaction_attachment"
 
 
 def _reject(code: str, message: str, status: int) -> tuple[Response, int]:
@@ -49,17 +51,31 @@ def _enforce_api_security() -> tuple[Response, int] | None:
     if not provided_token or not hmac.compare_digest(provided_token, expected_token):
         return _reject("unauthorized", "Valid launch authorization token required.", 401)
 
-    if request.method in _MUTATING_METHODS and not request.is_json:
-        return _reject(
-            "unsupported_media_type",
-            "Request Content-Type must be application/json.",
-            415,
-        )
+    if request.endpoint != _ATTACHMENT_UPLOAD_ENDPOINT:
+        content_len = request.content_length or 0
+        if content_len > MAX_CONTENT_LENGTH_BYTES:
+            return _reject(
+                "payload_too_large",
+                "Request body exceeds the 64 KiB local safety limit.",
+                413,
+            )
+        if request.method in _MUTATING_METHODS and content_len > 0 and not request.is_json:
+            return _reject(
+                "unsupported_media_type",
+                "Request Content-Type must be application/json.",
+                415,
+            )
 
     return None
 
 
 def _parse_json_object() -> dict[str, object]:
+    if not request.is_json:
+        raise ValidationError(
+            "Request Content-Type must be application/json.",
+            code="unsupported_media_type",
+            status_code=415,
+        )
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         raise ValidationError("Request body must be a valid JSON object.")
@@ -77,7 +93,7 @@ def get_overview() -> tuple[Response, int]:
 
 @api_bp.get("/transactions")
 def list_transactions() -> tuple[Response, int]:
-    """Return chronological transaction history."""
+    """Return filtered, sorted, paginated chronological transactions."""
     raw_limit = request.args.get("limit", "100")
     raw_offset = request.args.get("offset", "0")
     try:
@@ -88,18 +104,102 @@ def list_transactions() -> tuple[Response, int]:
     if limit <= 0 or offset < 0:
         raise ValidationError("Pagination parameters out of range.")
     db_path = current_app.config["FINORA_DB_PATH"]
-    data = transaction_service.list_transactions(db_path, limit=limit, offset=offset)
+    data = transaction_service.list_transactions(
+        db_path,
+        limit=limit,
+        offset=offset,
+        query=request.args.get("q"),
+        date_from=request.args.get("date_from"),
+        date_to=request.args.get("date_to"),
+        month=request.args.get("month"),
+        account_id=request.args.get("account_id"),
+        category_id=request.args.get("category_id"),
+        entry_type=request.args.get("entry_type"),
+        payment_method=request.args.get("payment_method"),
+        tag_id=request.args.get("tag_id"),
+        min_amount=request.args.get("min_amount"),
+        max_amount=request.args.get("max_amount"),
+        deleted=request.args.get("deleted"),
+        sort=request.args.get("sort"),
+    )
     return jsonify(data), 200
+
+
+@api_bp.get("/transactions/<int:transaction_id>")
+def get_transaction(transaction_id: int) -> tuple[Response, int]:
+    """Fetch a single logical transaction with postings, tags, and attachments."""
+    db_path = current_app.config["FINORA_DB_PATH"]
+    tx = transaction_service.get_transaction_detail(db_path, transaction_id)
+    return jsonify({"transaction": tx}), 200
 
 
 @api_bp.post("/transactions")
 def create_transaction() -> tuple[Response, int]:
-    """Create a Phase 1 expense or income transaction."""
+    """Create a Phase 2 single or split expense/income transaction."""
     payload = _parse_json_object()
     db_path = current_app.config["FINORA_DB_PATH"]
     tx, created = transaction_service.create_transaction(db_path, payload)
     status = 201 if created else 200
     return jsonify({"transaction": tx, "created": created}), status
+
+
+@api_bp.patch("/transactions/<int:transaction_id>")
+def update_transaction(transaction_id: int) -> tuple[Response, int]:
+    """Atomically edit a transaction, its split postings, transfer sides, or tags."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    tx = transaction_service.update_transaction(db_path, transaction_id, payload)
+    return jsonify({"transaction": tx}), 200
+
+
+@api_bp.delete("/transactions/<int:transaction_id>")
+def delete_transaction(transaction_id: int) -> tuple[Response, int]:
+    """Soft-delete an active transaction while preserving recovery and attachments."""
+    db_path = current_app.config["FINORA_DB_PATH"]
+    tx = transaction_service.soft_delete_transaction(db_path, transaction_id)
+    return jsonify({"transaction": tx}), 200
+
+
+@api_bp.post("/transactions/<int:transaction_id>/restore")
+def restore_transaction(transaction_id: int) -> tuple[Response, int]:
+    """Restore a soft-deleted transaction back into active ledger totals."""
+    db_path = current_app.config["FINORA_DB_PATH"]
+    tx = transaction_service.restore_transaction(db_path, transaction_id)
+    return jsonify({"transaction": tx}), 200
+
+
+@api_bp.delete("/transactions/<int:transaction_id>/purge")
+def purge_transaction(transaction_id: int) -> tuple[Response, int]:
+    """Permanently purge a soft-deleted transaction."""
+    db_path = current_app.config["FINORA_DB_PATH"]
+    res = transaction_service.purge_transaction(db_path, transaction_id)
+    return jsonify(res), 200
+
+
+@api_bp.post("/transactions/bulk")
+def bulk_transactions() -> tuple[Response, int]:
+    """Apply atomic bulk category, tag, delete, or restore operations."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    res = transaction_service.bulk_action(db_path, payload)
+    return jsonify(res), 200
+
+
+@api_bp.get("/transactions/<int:transaction_id>/refunds")
+def list_transaction_refunds(transaction_id: int) -> tuple[Response, int]:
+    """List active refunds and remaining refundable amounts for an expense."""
+    db_path = current_app.config["FINORA_DB_PATH"]
+    data = transaction_service.list_refunds_for_transaction(db_path, transaction_id)
+    return jsonify(data), 200
+
+
+@api_bp.post("/transactions/<int:transaction_id>/refunds")
+def create_transaction_refund(transaction_id: int) -> tuple[Response, int]:
+    """Record a linked partial or full refund for an active expense."""
+    payload = _parse_json_object()
+    db_path = current_app.config["FINORA_DB_PATH"]
+    tx, created = transaction_service.create_refund(db_path, transaction_id, payload)
+    return jsonify({"transaction": tx, "created": created}), (201 if created else 200)
 
 
 @api_bp.post("/transfers")
